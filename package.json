@@ -48,9 +48,9 @@
     "test:integration": "node scripts/test.js ./src/**/*.integration.spec.js --runInBand",
     "start": "scripts/start.sh",
     "build": "scripts/build.sh",
-    "migrate:rollback": "scripts/migrate.rollback.sh",
-    "migrate:latest": "scripts/migrate.latest.sh",
-    "seed:run": "scripts/seed.run.sh"
+    "database:rollback": "scripts/migrate.rollback.sh",
+    "database:latest": "scripts/migrate.latest.sh",
+    "database:seed": "scripts/seed.run.sh"
   },
   "jest": {
     "collectCoverageFrom": [
