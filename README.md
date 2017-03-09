@@ -1,3 +1,5 @@
+# Peers Against Humanity backend
+
 ## Table of Contents
 
 - [Available Scripts](#available-scripts)
