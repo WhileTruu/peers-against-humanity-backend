@@ -1,3 +1,4 @@
+/* eslint-disable */
 process.env.NODE_ENV = 'test';
 process.env.PUBLIC_URL = '';
 process.env.CONNECTION_STRING = 'postgres://user:password@localhost:5432/sah_test';
@@ -31,3 +32,5 @@ process.stdout.write = function(chunk, encoding, callback) {
 
 
 jest.run(argv);
+
+/* eslint-enable */
