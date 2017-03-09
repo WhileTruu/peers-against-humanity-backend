@@ -1,0 +1,5 @@
+general:
+  build_dir: build
+database:
+  override:
+  - psql -u ubuntu sah_test
