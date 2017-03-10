@@ -248,8 +248,3 @@ Install docker! :D<br>
 Make sure the docker service is running and then run ``docker compose up -d``, which should run the database container in the background. (You can check with ``docker ps``.)
 `npm run build` creates a `build` directory with a production build of the app.<br>
 `npm run start` runs the server, which to function properly requires a database with tables and default data. The command requires the SECRET environment variable to be set, the CONNECTION_STRING variable is also needed, since the backend is not of much use without the connection.
-
-## Notes
-
-For now the first user in the db 'TheLegend27' is put into the production db as well, I might want to either not make the account public or just not create it in production.
-Some tests rely on the account, which definitely is not how it should be done.
