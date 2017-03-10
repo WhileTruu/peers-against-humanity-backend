@@ -1,6 +1,7 @@
 import express from 'express'
 import request from 'supertest'
 import { json } from 'body-parser'
+import { hash } from 'bcrypt'
 
 import knex from '../../../database'
 import { MAX_USERNAME_LENGTH, MAX_PASSWORD_LENGTH } from '../../config'
@@ -17,7 +18,15 @@ describe('POST /api/v1/users/authentication', () => {
       .then(() => {
         knex.migrate.latest()
           .then(() => {
-            knex.seed.run().then(() => done())
+            knex.seed.run()
+            hash('password', 10)
+              .then(hashedPassword =>
+                knex('users')
+                  .insert({
+                    username: 'TheLegend27',
+                    password: hashedPassword,
+                  }).then(() => done()),
+              )
           })
       })
   })

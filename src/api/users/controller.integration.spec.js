@@ -1,6 +1,7 @@
 import express from 'express'
 import request from 'supertest'
 import { json } from 'body-parser'
+import { hash } from 'bcrypt'
 
 import knex from '../../database'
 import { error } from '../util'
@@ -16,7 +17,15 @@ describe('GET /api/v1/users/:id', () => {
       .then(() => {
         knex.migrate.latest()
           .then(() => {
-            knex.seed.run().then(() => done())
+            knex.seed.run()
+            hash('password', 10)
+              .then(hashedPassword =>
+                knex('users')
+                  .insert({
+                    username: 'TheLegend27',
+                    password: hashedPassword,
+                  }).then(() => done()),
+              )
           })
       })
   })
