@@ -48,7 +48,7 @@
     "test:integration": "node scripts/test.js ./src/**/*.integration.spec.js --runInBand",
     "start": "scripts/start.sh",
     "build": "scripts/build.sh",
-    "test": "CONNECTION_STRING='postgres://ubuntu:@localhost:5432/circle_test' node scripts/test.js ./src/**/*.spec.js --runInBand",
+    "circleci:test": "CONNECTION_STRING='postgres://ubuntu:@localhost:5432/circle_test' node scripts/test.js ./src/**/*.*.spec.js --runInBand --forceExit",
     "database:rollback": "scripts/migrate.rollback.sh",
     "database:latest": "scripts/migrate.latest.sh",
     "database:seed": "scripts/seed.run.sh"
