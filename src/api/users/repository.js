@@ -5,7 +5,7 @@ export function findByUsername(username) {
 }
 
 export function findById(id) {
-  return database('users').where({ id }).first()
+  return database('users').select(['id', 'created_at', 'username']).where({ id }).first()
 }
 
 export function create(username, password) {

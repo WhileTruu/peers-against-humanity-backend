@@ -32,7 +32,8 @@ describe('GET /api/v1/users/:id', () => {
         expect(res.status).toBe(200)
         expect(res.body.created_at).toBeDefined()
         expect(res.body.id).toBe(1)
-        expect(res.body.password).toBe('$2a$10$q6Ktp1YjbjphHYXcmEzHkOzxSsd7gOQIHABcP76uqq33uSUOmmNO6')
+        expect(res.body.username).toBeDefined()
+        expect(res.body.password).not.toBeDefined()
       })
   ))
 

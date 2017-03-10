@@ -9,6 +9,7 @@
   - [npm run database:rollback](#npm-run-database-rollback)
   - [npm run database:latest](#npm-run-database-latest)
   - [npm run database:seed](#npm-run-database-seed)
+- [Environment variables](#environment-variables)
 - [Installing a Dependency](#installing-a-dependency)
 - [Running Tests](#running-tests)
   - [Filename Conventions](#filename-conventions)
@@ -22,6 +23,7 @@
   - [Coverage Reporting](#coverage-reporting)
   - [Continuous Integration](#continuous-integration)
 - [Deployment](#deployment)
+- [Notes](#notes)
 
 ## Available Scripts
 
@@ -57,7 +59,26 @@ Updates the database matching your NODE_ENV to the latest migration.
 
 ### `npm run database:seed`
 
-Adds required defauld data to the database matching your NODE_ENV.
+Adds required default data to the database matching your NODE_ENV.
+
+## Environment variables
+You can temporarily set environment variables by running the following command in your shell.
+```
+export ENV_VARIABLE_NAME=env_variable
+```
+Or to make the variable(s) permanent write those commands into your `.bashrc` or `.zshrc` or `.yourshellrc`
+
+### `NODE_ENV`
+Specifies the environment to run the, well, mostly db in. Might have some effect in app as well.
+
+### `CONNECTION_STRING`
+The database connection string.
+
+### `SECRET`
+A string used to sign user tokens with.
+
+### `PORT`
+The port to run the app on. If left unspecified, the default is 8080.
 
 ## Installing a Dependency
 
@@ -223,29 +244,12 @@ The build command will check for linter warnings and fail if any are found.
 
 ## Deployment
 
-`npm run build` creates a `build` directory with a production build of your app. Set up your favourite HTTP server so that a visitor to your site is served `index.html`, and requests to static paths like `/static/js/main.<hash>.js` are served with the contents of the `/static/js/main.<hash>.js` file. For example, Python contains a built-in HTTP server that can serve static files:
+Install docker! :D<br>
+Make sure the docker service is running and then run ``docker compose up -d``, which should run the database container in the background. (You can check with ``docker ps``.)
+`npm run build` creates a `build` directory with a production build of the app.<br>
+`npm run start` runs the server, which to function properly requires a database with tables and default data. The command requires the SECRET environment variable to be set, the CONNECTION_STRING variable is also needed, since the backend is not of much use without the connection.
 
-```sh
-cd build
-python -m SimpleHTTPServer 9000
-```
+## Notes
 
-If you're using [Node](https://nodejs.org/) and [Express](http://expressjs.com/) as a server, it might look like this:
-
-```javascript
-const express = require('express');
-const path = require('path');
-const app = express();
-
-app.use(express.static('./build'));
-
-app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname, './build', 'index.html'));
-});
-
-app.listen(9000);
-```
-
-Create React App is not opinionated about your choice of web server. Any static file server will do. The `build` folder with static assets is the only output produced by Create React App.
-
-However this is not quite enough if you use client-side routing. Read the next section if you want to support URLs like `/todos/42` in your single-page app.
+For now the first user in the db 'TheLegend27' is put into the production db as well, I might want to either not make the account public or just not create it in production.
+Some tests rely on the account, which definitely is not how it should be done.
