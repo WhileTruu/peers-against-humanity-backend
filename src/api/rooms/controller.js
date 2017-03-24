@@ -4,7 +4,6 @@ import logger from '../../logger'
 
 export default class WebSocketServer {
   constructor({ server, path }) {
-    // const WebSocketServer = WebSocket.Server
     this.webSocketServer = new WebSocket.Server({ server, path })
     logger.info('WS server running')
     this.webSocketServer.on('connection', (client) => {

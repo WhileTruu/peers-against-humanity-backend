@@ -2,7 +2,6 @@ import { Router } from 'express'
 
 import { findById, getCategories, addCategory } from './repository'
 import logger from '../../logger'
-import { error as errorMessage } from '../util'
 
 const router = new Router()
 
@@ -11,7 +10,7 @@ router.get('/all', (request, response) => {
     .then(tags => response.status(200).json(tags))
     .catch((error) => {
       logger.error(`categories/all: ${error}`)
-      response.status(500).send(errorMessage.SERVICE_UNAVAILABLE)
+      response.status(500).send()
     })
 })
 
@@ -20,14 +19,14 @@ router.get('/:id', (request, response) => {
     .then(tag => response.status(200).json(tag))
     .catch((error) => {
       logger.error(`categories/${request.params.id}: ${error}`)
-      response.status(500).send(errorMessage.SERVICE_UNAVAILABLE)
+      response.status(500).send()
     })
 })
 
 router.post('/new', (request, response) => {
   const { name = '' } = request.body
   if (!name.trim()) {
-    response.status(400).send(errorMessage.MISSING_CATEGORY_NAME)
+    response.status(400).send()
   } else {
     addCategory(name)
       .then((id) => {
@@ -35,7 +34,7 @@ router.post('/new', (request, response) => {
       })
       .catch((error) => {
         logger.error(`categories/new: ${error}`)
-        response.status(500).send(errorMessage.SERVICE_UNAVAILABLE)
+        response.status(500).send()
       })
   }
 })

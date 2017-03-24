@@ -8,7 +8,6 @@ import {
   upVote,
   downVote,
 } from './repository'
-import { error as errorMessage } from '../util'
 import validateCardData from './validationService'
 import { verifyAuthorization } from '../authorizationService'
 
@@ -21,7 +20,7 @@ router.get('/all', (request, response) => {
     .then(cards => response.status(200).json(cards))
     .catch((error) => {
       logger.error(error.message)
-      response.status(500).json({ message: error.message })
+      response.status(500).send()
     })
 })
 
@@ -30,7 +29,7 @@ router.get('/random', (request, response) => {
     .then(card => response.status(200).json(card))
     .catch((error) => {
       logger.error(error.message)
-      response.status(500).json({ message: error.message })
+      response.status(500).send()
     })
 })
 
@@ -44,7 +43,7 @@ router.post('/new', verifyAuthorization, validateCardData, (request, response) =
     })
     .catch((error) => {
       logger.error(`cards/new: ${error}`)
-      response.status(500).send(errorMessage.SERVICE_UNAVAILABLE)
+      response.status(500).send()
     })
 })
 
@@ -55,7 +54,7 @@ router.post('/:id/vote/up', verifyAuthorization, (request, response) => {
     .then(result => response.status(200).json(result))
     .catch((error) => {
       logger.error(error.message)
-      response.status(500).json({ message: 'Something went wrong with upvoting.' })
+      response.status(500).send()
     })
 })
 
@@ -66,7 +65,7 @@ router.post('/:id/vote/down', verifyAuthorization, (request, response) => {
     .then(result => response.status(200).json(result))
     .catch((error) => {
       logger.error(error.message)
-      response.status(500).json({ message: 'Something went wrong with downvoting.' })
+      response.status(500).send()
     })
 })
 
@@ -75,7 +74,7 @@ router.get('/:id', (request, response) => {
     .then(card => response.status(200).json(card))
     .catch((error) => {
       logger.error(error.message)
-      response.status(500).json({ message: error.message })
+      response.status(500).send()
     })
 })
 
