@@ -4,7 +4,6 @@ import { json } from 'body-parser'
 
 import knex from '../../../database'
 import { MAX_USERNAME_LENGTH, MAX_PASSWORD_LENGTH } from '../../config'
-import { error } from '../../util'
 import controller from '.'
 
 const app = express()
@@ -43,7 +42,6 @@ describe('POST /api/v1/users/registration', () => {
       .send(({ plainTextPassword: 'Owaddup' }))
       .then((res) => {
         expect(res.status).toBe(400)
-        expect(res.text).toBe(error.MISSING_USERNAME_OR_PASSWORD)
       })
   ))
 
@@ -53,7 +51,6 @@ describe('POST /api/v1/users/registration', () => {
       .send(({ username: 'Owaddup' }))
       .then((res) => {
         expect(res.status).toBe(400)
-        expect(res.text).toBe(error.MISSING_USERNAME_OR_PASSWORD)
       })
   ))
 
@@ -66,7 +63,6 @@ describe('POST /api/v1/users/registration', () => {
       }))
       .then((res) => {
         expect(res.status).toBe(400)
-        expect(res.text).toBe(error.INVALID_USERNAME)
       })
   ))
 
@@ -79,7 +75,6 @@ describe('POST /api/v1/users/registration', () => {
       }))
       .then((res) => {
         expect(res.status).toBe(400)
-        expect(res.text).toBe(error.INVALID_PASSWORD)
       })
   ))
 
@@ -92,7 +87,6 @@ describe('POST /api/v1/users/registration', () => {
       }))
       .then((res) => {
         expect(res.status).toBe(400)
-        expect(res.text).toBe(error.INVALID_USERNAME)
       })
   ))
 
@@ -105,7 +99,6 @@ describe('POST /api/v1/users/registration', () => {
       }))
       .then((res) => {
         expect(res.status).toBe(400)
-        expect(res.text).toBe(error.INVALID_PASSWORD)
       })
   ))
 
@@ -117,7 +110,6 @@ describe('POST /api/v1/users/registration', () => {
           .send(({ username: 'DatBoiiiiii', plainTextPassword: 'Owaddup' }))
           .then((res) => {
             expect(res.status).toBe(500)
-            expect(res.text).toEqual(error.SERVICE_UNAVAILABLE)
             done()
           })
       })
@@ -132,7 +124,6 @@ describe('POST /api/v1/users/registration', () => {
       }))
       .then((res) => {
         expect(res.status).toBe(400)
-        expect(res.text).toBe(error.INVALID_USERNAME)
       })
   ))
 
@@ -145,7 +136,6 @@ describe('POST /api/v1/users/registration', () => {
       }))
       .then((res) => {
         expect(res.status).toBe(400)
-        expect(res.text).toBe(error.INVALID_PASSWORD)
       })
   ))
 })

@@ -4,7 +4,6 @@ import { json } from 'body-parser'
 
 import knex from '../../database'
 
-import { error } from '../util'
 import { controller } from '.'
 
 const app = express()
@@ -47,7 +46,6 @@ describe('categories', () => {
             .set('Authorization', 'Bearer EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTQ4NTkzODI5Mn0.kH3mPmxNoRZJxkkIvJZFENPUP8YHC1vo17zmBw1BwWM')
             .then((res) => {
               expect(res.status).toBe(500)
-              expect(res.text).toBe(error.SERVICE_UNAVAILABLE)
               done()
             })
         })
@@ -87,7 +85,6 @@ describe('categories', () => {
             .set('Authorization', 'Bearer EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTQ4NTkzODI5Mn0.kH3mPmxNoRZJxkkIvJZFENPUP8YHC1vo17zmBw1BwWM')
             .then((res) => {
               expect(res.status).toBe(500)
-              expect(res.text).toBe(error.SERVICE_UNAVAILABLE)
               done()
             })
         })
@@ -125,7 +122,6 @@ describe('categories', () => {
         .send({ name: '' })
         .then((res) => {
           expect(res.status).toBe(400)
-          expect(res.text).toBe(error.MISSING_CATEGORY_NAME)
         })
     ))
 
@@ -137,7 +133,6 @@ describe('categories', () => {
             .send({ name: '1337' })
             .then((res) => {
               expect(res.status).toBe(500)
-              expect(res.text).toBe(error.SERVICE_UNAVAILABLE)
               done()
             })
         })

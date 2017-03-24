@@ -4,7 +4,6 @@ import { json } from 'body-parser'
 import { hash } from 'bcrypt'
 
 import knex from '../../database'
-import { error } from '../util'
 import { controller } from '.'
 
 const app = express()
@@ -52,7 +51,6 @@ describe('GET /api/v1/users/:id', () => {
       .set('Authorization', 'Bearer EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTQ4NTkzODI5Mn0.kH3mPmxNoRZJxkkIvJZFENPUP8YHC1vo17zmBw1BwWM')
       .then((res) => {
         expect(res.status).toBe(403)
-        expect(res.text).toBe(error.MALFORMED_TOKEN)
       })
   ))
 
@@ -61,7 +59,6 @@ describe('GET /api/v1/users/:id', () => {
       .get('/1337')
       .then((res) => {
         expect(res.status).toBe(403)
-        expect(res.text).toBe(error.MISSING_AUTH_HEADER)
       })
   ))
 
@@ -71,7 +68,6 @@ describe('GET /api/v1/users/:id', () => {
       .set('Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTQ4NTkzODI5Mn0.kH3mPmxNoRZJxkkIvJZFENPUP8YHC1vo17zmBw1BwWM')
       .then((res) => {
         expect(res.status).toBe(403)
-        expect(res.text).toBe(error.ACCESS_DENIED)
       })
   ))
 
@@ -83,7 +79,6 @@ describe('GET /api/v1/users/:id', () => {
           .set('Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTQ4NTkzODI5Mn0.kH3mPmxNoRZJxkkIvJZFENPUP8YHC1vo17zmBw1BwWM')
           .then((res) => {
             expect(res.status).toBe(500)
-            expect(res.text).toEqual(error.SERVICE_UNAVAILABLE)
             done()
           })
       })

@@ -4,7 +4,6 @@ import { json } from 'body-parser'
 import { hash } from 'bcrypt'
 
 import knex from '../../database'
-import { error } from '../util'
 import { controller } from '.'
 
 const app = express()
@@ -54,7 +53,6 @@ describe('cards', () => {
         .send({ languageId: 1, colorId: 1, text: 'YoloHashtag', category: 'Default' })
         .then((res) => {
           expect(res.status).toBe(403)
-          expect(res.text).toBe(error.MALFORMED_TOKEN)
         })
     ))
 
@@ -64,7 +62,6 @@ describe('cards', () => {
         .send({ languageId: 1, colorId: 1, text: 'YoloHashtag', category: 'Default' })
         .then((res) => {
           expect(res.status).toBe(403)
-          expect(res.text).toBe(error.MISSING_AUTH_HEADER)
         })
     ))
 
@@ -75,7 +72,6 @@ describe('cards', () => {
         .send({ languageId: 10, colorId: 10, text: 'YoloHashtag', category: 'Defaulto' })
         .then((res) => {
           expect(res.status).toBe(400)
-          expect(res.text).toBe(error.BAD_REQUEST)
         })
     ))
   })
