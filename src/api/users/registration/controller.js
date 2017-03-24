@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { hash } from 'bcrypt'
 
 import { create } from '../repository'
-import { error as errorMessage, validateUsernameAndPassword } from '../../util'
+import { validateUsernameAndPassword } from '../../util'
 import logger from '../../../logger'
 import {
   createTokenForUser,
@@ -19,11 +19,11 @@ router.post('/', validateUsernameAndPassword, (request, response) => {
       })
       .catch((error) => {
         logger.error(`users/registration: ${error}`)
-        response.status(500).send(errorMessage.SERVICE_UNAVAILABLE)
+        response.status(500).send()
       }))
     .catch((error) => {
       logger.error(`users/registration: ${error}`)
-      response.status(500).send(errorMessage.SERVICE_UNAVAILABLE)
+      response.status(500).send()
     })
 })
 

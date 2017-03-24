@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { compare } from 'bcrypt'
 
 import { findByUsername } from '../repository'
-import { error as errorMessage, validateUsernameAndPassword } from '../../util'
+import { validateUsernameAndPassword } from '../../util'
 import logger from '../../../logger'
 import {
   createTokenForUser,
@@ -15,12 +15,12 @@ router.post('/', validateUsernameAndPassword, (request, response) => {
   findByUsername(username)
     .then((authorization) => {
       if (!authorization) {
-        response.status(400).send(errorMessage.INVALID_USERNAME)
+        response.status(400).send()
       } else {
         compare(plainTextPassword, authorization.password)
           .then((valid) => {
             if (!valid) {
-              response.status(400).send(errorMessage.INVALID_USERNAME_OR_PASSWORD)
+              response.status(400).send()
             } else {
               const { id } = authorization
               response.status(200).json({ token: createTokenForUser({ id }) })
@@ -28,13 +28,13 @@ router.post('/', validateUsernameAndPassword, (request, response) => {
           })
           .catch((error) => {
             logger.error(`users/authentication: ${error}`)
-            response.status(500).send(errorMessage.SERVICE_UNAVAILABLE)
+            response.status(500).send()
           })
       }
     })
     .catch((error) => {
       logger.error(`users/authentication: ${error}`)
-      response.status(500).send(errorMessage.SERVICE_UNAVAILABLE)
+      response.status(500).send()
     })
 })
 

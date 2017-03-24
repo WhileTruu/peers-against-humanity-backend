@@ -37,11 +37,11 @@ export function isPasswordValid(password) {
 export function validateUsernameAndPassword(request, response, next) {
   const { username = '', plainTextPassword = '' } = request.body
   if (!username.trim() || !plainTextPassword) {
-    response.status(400).send(error.MISSING_USERNAME_OR_PASSWORD)
+    response.status(400).send()
   } else if (!isUsernameValid(username)) {
-    response.status(400).send(error.INVALID_USERNAME)
+    response.status(400).send()
   } else if (!isPasswordValid(plainTextPassword)) {
-    response.status(400).send(error.INVALID_PASSWORD)
+    response.status(400).send()
   } else {
     next()
   }

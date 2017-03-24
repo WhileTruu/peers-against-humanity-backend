@@ -6,6 +6,5 @@ exports.seed = (knex, Promise) => (
       // Inserts seed entries
       knex('languages').insert({ id: 1, name: 'english' }),
       knex('languages').insert({ id: 2, name: 'estonian' }),
-    ]),
-  )
+    ]))
 )
