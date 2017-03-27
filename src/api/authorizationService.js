@@ -1,9 +1,22 @@
-import { sign as signToken, verify as verifyToken } from 'jsonwebtoken'
+import { sign as signToken, verify } from 'jsonwebtoken'
 
 import { SECRET } from '../config'
 
 export function createTokenForUser(user) {
   return signToken({ userId: user.id }, SECRET)
+}
+
+export function verifyToken(token) {
+  let decoded
+  try {
+    decoded = verify(token, SECRET)
+  } catch (e) {
+    return { userId: null, authorization: false }
+  }
+  if (decoded) {
+    return { userId: decoded.userId, authorization: true }
+  }
+  return { userId: null, authorization: false }
 }
 
 export function verifyAuthorization(request, response, next) {
@@ -14,7 +27,7 @@ export function verifyAuthorization(request, response, next) {
     const token = authHeader.replace('Bearer ', '')
     let decoded
     try {
-      decoded = verifyToken(token, SECRET)
+      decoded = verify(token, SECRET)
     } catch (e) {
       response.status(403).send()
     }

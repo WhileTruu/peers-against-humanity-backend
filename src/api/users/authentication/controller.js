@@ -23,7 +23,7 @@ router.post('/', validateUsernameAndPassword, (request, response) => {
               response.status(400).send()
             } else {
               const { id } = authorization
-              response.status(200).json({ token: createTokenForUser({ id }) })
+              response.status(200).json({ username, id, token: createTokenForUser({ id }) })
             }
           })
           .catch((error) => {
