@@ -1,20 +1,30 @@
 export class Room {
-  constructor(id, creator) {
+  constructor(id, owner) {
     this.id = id
-    this.creator = creator
+    this.owner = owner
     this.members = {}
   }
 
   addMember(member) {
-    this.members = {
-      ...this.members,
-      [member.id]: member,
-    }
+    this.members = { ...this.members, [member.id]: member }
   }
 
-  removeMember(member) {
-    const { [member.id]: removedMember, ...members } = this.members
-    this.members = members
+  removeMemberOnly(memberId) {
+    delete this.members[memberId]
+  }
+
+  removeOwnerOnly() {
+    const newOwner = this.members[Object.keys(this.members)[0]]
+    this.owner = newOwner
+    if (newOwner) delete this.members[newOwner.id]
+  }
+
+  removeMember(memberId) {
+    if (memberId === this.owner.id) {
+      this.removeOwnerOnly()
+    } else {
+      this.removeMemberOnly(memberId)
+    }
   }
 
   getObject() {
