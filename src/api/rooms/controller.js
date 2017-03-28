@@ -1,5 +1,6 @@
 import WebSocket from 'ws'
 
+import { createRoom, getAllRooms } from './repository'
 import { Client, Room } from './GameRoom' // eslint-disable-line
 import {
   SOCKET_CREATE_ROOM,
@@ -38,6 +39,9 @@ export default class WebSocketServer {
       switch (data.type) {
         case SOCKET_CREATE_ROOM: {
           this.createRoom(client, data)
+          getAllRooms()
+            .then(rooms => this.broadcast(JSON.stringify(rooms)))
+            .catch(e => console.log(e))
           break
         }
         case SOCKET_EXIT_ROOM: {
