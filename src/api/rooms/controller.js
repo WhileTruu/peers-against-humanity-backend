@@ -12,7 +12,7 @@ import {
 import logger from '../../logger'
 import { verifyToken } from '../authorizationService'
 
-const availableRooms = {}
+// const availableRooms = {}
 
 export function getRandomName() {
   return Math.random().toString(36).substring(2, 6).toUpperCase()
@@ -30,9 +30,13 @@ export default class WebSocketServer {
     const clientVerification = verifyToken(client.upgradeReq.headers['sec-websocket-protocol'])
     if (!clientVerification.authorization) client.close()
     client.userId = clientVerification.userId // eslint-disable-line no-param-reassign
-    client.send(JSON.stringify({ type: SOCKET_UPDATE_AVAILABLE_ROOMS, availableRooms }))
+    getAllRooms()
+      .then(availableRooms => (
+        client.send(JSON.stringify({ type: SOCKET_UPDATE_AVAILABLE_ROOMS, availableRooms }))
+      ))
+      .catch(e => console.log(e))
     client.on('close', () => {
-      this.exitFromRoom(client)
+      // this.exitFromRoom(client)
     })
     client.on('message', (message) => {
       const data = JSON.parse(message)
@@ -42,16 +46,18 @@ export default class WebSocketServer {
             .then(room => console.log(room))
             .catch(error => console.log(error))
           getAllRooms()
-            .then(rooms => this.broadcast(JSON.stringify(rooms)))
+            .then(availableRooms => (
+              this.broadcast({ type: SOCKET_UPDATE_AVAILABLE_ROOMS, availableRooms })
+            ))
             .catch(e => console.log(e))
           break
         }
         case SOCKET_EXIT_ROOM: {
-          this.exitFromRoom(client)
+          // this.exitFromRoom(client)
           break
         }
         case SOCKET_JOIN_ROOM: {
-          this.joinRoom(client, data)
+          // this.joinRoom(client, data)
           break
         }
         default:
@@ -63,45 +69,45 @@ export default class WebSocketServer {
   broadcast(data) {
     this.webSocketServer.clients.forEach((client) => {
       if (client.readyState === client.OPEN) {
-        client.send(data)
+        client.send(JSON.stringify(data))
       }
     })
   }
 
-  exitFromRoom(client) {
-    const roomName = client.roomName
-    client.roomName = null // eslint-disable-line no-param-reassign
-    availableRooms[roomName].removeMember(client.userId)
-    if (!availableRooms[roomName].owner) {
-      delete availableRooms[roomName]
-      this.broadcast(JSON.stringify({ type: SOCKET_UPDATE_AVAILABLE_ROOMS, availableRooms }))
-    } else {
-      this.broadcast(JSON.stringify({
-        type: SOCKET_UPDATE_ROOM,
-        room: availableRooms[roomName],
-      }))
-    }
-  }
+  // exitFromRoom(client) {
+  //   const roomName = client.roomName
+  //   client.roomName = null // eslint-disable-line no-param-reassign
+  //   availableRooms[roomName].removeMember(client.userId)
+  //   if (!availableRooms[roomName].owner) {
+  //     delete availableRooms[roomName]
+  //     this.broadcast({ type: SOCKET_UPDATE_AVAILABLE_ROOMS, availableRooms })
+  //   } else {
+  //     this.broadcast({
+  //       type: SOCKET_UPDATE_ROOM,
+  //       room: availableRooms[roomName],
+  //     })
+  //   }
+  // }
 
-  joinRoom(client, data) {
-    availableRooms[data.roomName].addMember(new Client(client.userId, data.username))
-    client.roomName = data.roomName // eslint-disable-line no-param-reassign
-    this.broadcast(JSON.stringify({
-      type: SOCKET_UPDATE_ROOM,
-      room: availableRooms[data.roomId],
-    }))
-  }
+  // joinRoom(client, data) {
+  //   availableRooms[data.roomName].addMember(new Client(client.userId, data.username))
+  //   client.roomName = data.roomName // eslint-disable-line no-param-reassign
+  //   this.broadcast({
+  //     type: SOCKET_UPDATE_ROOM,
+  //     room: availableRooms[data.roomId],
+  //   })
+  // }
 
-  createRoom(client, data) {
-    if (!client.roomName) {
-      const roomName = getRandomName()
-      client.roomName = roomName // eslint-disable-line no-param-reassign
-      const room = new Room(roomName, new Client(client.userId, data.username))
-      availableRooms[roomName] = room
-      this.broadcast(JSON.stringify({
-        type: SOCKET_UPDATE_ROOM,
-        room,
-      }))
-    }
-  }
+  // createRoom(client, data) {
+  //   if (!client.roomName) {
+  //     const roomName = getRandomName()
+  //     client.roomName = roomName // eslint-disable-line no-param-reassign
+  //     const room = new Room(roomName, new Client(client.userId, data.username))
+  //     availableRooms[roomName] = room
+  //     this.broadcast(JSON.stringify({
+  //       type: SOCKET_UPDATE_ROOM,
+  //       room,
+  //     }))
+  //   }
+  // }
 }

@@ -8,6 +8,7 @@ function transformRoomFromDatabase(room) {
     started: room.started,
     finished: room.finished,
     createdAt: room.created_at,
+    ownerUsername: room.username,
     members: (room.members ? room.members.map(member => ({
       id: member.id,
       active: member.active,
@@ -15,6 +16,12 @@ function transformRoomFromDatabase(room) {
       username: member.username,
     })) : []),
   }
+}
+
+function transformRoomsFromDatabase(rooms) {
+  return rooms
+    .map(room => transformRoomFromDatabase(room))
+    .reduce((pRoom, nRoom) => ({ ...pRoom, [nRoom.id]: nRoom }), null)
 }
 
 export function joinRoom(roomId, userId) {
@@ -117,7 +124,7 @@ export function getAllRooms() {
   // `)
   return new Promise((resolve, reject) => {
     database
-      .select('rooms.*', 'members')
+      .select('rooms.*', 'users.username', 'members')
       .from('rooms')
       .joinRaw(database.raw(`
         LEFT JOIN (
@@ -130,7 +137,8 @@ export function getAllRooms() {
           GROUP BY 1
         ) room_members USING (id)
         `))
-      .then(results => resolve(results.map(result => transformRoomFromDatabase(result))))
+      .innerJoin('users', function joinOn() { this.on('users.id', '=', 'rooms.owner_id') })
+      .then(results => resolve(transformRoomsFromDatabase(results)))
       .catch(error => reject(error))
   })
 }
