@@ -1,10 +1,83 @@
 import database from '../../database'
 
-export function connectRoomWithMember(roomId, userId) {
+function transformRoomFromDatabase(room) {
+  return {
+    id: room.id,
+    creatorId: room.creator_id,
+    ownerId: room.owner_id,
+    started: room.started,
+    finished: room.finished,
+    createdAt: room.created_at,
+    members: (room.members ? room.members.map(member => ({
+      id: member.id,
+      active: member.active,
+      roomId: member.room_id,
+      username: member.username,
+    })) : []),
+  }
+}
+
+export function joinRoom(roomId, userId) {
   return database('room_members').insert({
     room_id: roomId,
     user_id: userId,
     active: true,
+  })
+}
+
+function removeFromRoomMemebers(roomId, userId) {
+  return database('room_members')
+    .where({ room_id: roomId, user_id: userId })
+    .update({ active: false })
+}
+
+function changeRoomOwner(roomId, newOwnerId) {
+  return database('rooms')
+    .where({ id: roomId })
+    .update({ owner_id: newOwnerId })
+}
+
+function setRoomFinished(roomId) {
+  return database('rooms')
+    .where({ id: roomId })
+    .update({ finished: true })
+}
+
+export function exitRoom(roomId, userId) {
+  // check if user is room owner
+  //   if is room owner find the next in line and set him as owner
+  //     set user not active
+  //     if no next in line set room finished
+  //   else
+  //     just set user not active
+  return new Promise((resolve, reject) => {
+    database('rooms').select('*').where({ id: roomId, owner_id: userId })
+      .then((rooms) => {
+        if (rooms.length) {
+          database('room_members').select('*').where({ room_id: roomId, active: true })
+            .then((roomMembers) => {
+              removeFromRoomMemebers(roomId, userId)
+                .then(() => {
+                  if (roomMembers.length) {
+                    changeRoomOwner(roomId, roomMembers[0].user_id)
+                      .then(result => resolve(result))
+                      .catch(error => reject(error))
+                  } else {
+                    setRoomFinished(roomId)
+                      .then(result => resolve(result))
+                      .catch(error => reject(error))
+                  }
+                })
+                .catch(error => reject(error))
+            })
+            .catch(error => reject(error))
+        } else {
+          removeFromRoomMemebers(roomId, userId)
+            .then(result => resolve(result))
+            .catch(error => reject(error))
+        }
+      })
+      .catch(error => reject(error))
   })
 }
 
@@ -20,9 +93,8 @@ export function createRoom(userId) {
       })
       .then((roomsResult) => {
         const room = roomsResult[0]
-        console.log(room, room.id)
-        connectRoomWithMember(room.id, userId)
-          .then(() => resolve({ roomId: room.id, room }))
+        joinRoom(room.id, userId)
+          .then(() => resolve(transformRoomFromDatabase(room)))
           .catch(error => resolve(error))
       })
       .catch(error => reject(error))
@@ -43,18 +115,24 @@ export function getAllRooms() {
   //      GROUP BY 1
   //   ) room_members USING (id);
   // `)
-  return database
-    .select('rooms.*', 'members').from('rooms').joinRaw(database.raw(`
-      LEFT JOIN (
+  return new Promise((resolve, reject) => {
+    database
+      .select('rooms.*', 'members')
+      .from('rooms')
+      .joinRaw(database.raw(`
+        LEFT JOIN (
           SELECT room_id AS id, jsonb_agg(members) AS "members"
           FROM (
-              SELECT room_id, id, username, active
-              FROM room_members
-              INNER JOIN users ON users.id = room_members.user_id
+            SELECT room_id, id, username, active
+            FROM room_members
+            INNER JOIN users ON users.id = room_members.user_id
           ) AS members
           GROUP BY 1
-      ) room_members USING (id)
-    `))
+        ) room_members USING (id)
+        `))
+      .then(results => resolve(results.map(result => transformRoomFromDatabase(result))))
+      .catch(error => reject(error))
+  })
 }
 
 /*

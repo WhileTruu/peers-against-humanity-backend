@@ -38,7 +38,9 @@ export default class WebSocketServer {
       const data = JSON.parse(message)
       switch (data.type) {
         case SOCKET_CREATE_ROOM: {
-          this.createRoom(client, data)
+          createRoom(client.userId)
+            .then(room => console.log(room))
+            .catch(error => console.log(error))
           getAllRooms()
             .then(rooms => this.broadcast(JSON.stringify(rooms)))
             .catch(e => console.log(e))
@@ -76,7 +78,7 @@ export default class WebSocketServer {
     } else {
       this.broadcast(JSON.stringify({
         type: SOCKET_UPDATE_ROOM,
-        room: availableRooms[client.roomName],
+        room: availableRooms[roomName],
       }))
     }
   }
