@@ -27,6 +27,27 @@ export default class WebSocketServer {
     client.userId = clientVerification.userId // eslint-disable-line no-param-reassign
     this.closeDuplicateClientConnection(clientVerification.userId, client)
     this.sendAllRoomsToClient(client)
+    client.on('message', (message) => {
+      const data = JSON.parse(message)
+      console.log(data.type, data.peerId, client.userId)
+
+      switch (data.type) {
+        case 'PEER_CONNECTION_OFFER': {
+          this.sendToClient(data.peerId, { ...data, peerId: client.userId })
+          break
+        }
+        case 'PEER_CONNECTION_ANSWER': {
+          this.sendToClient(data.peerId, { ...data, peerId: client.userId })
+          break
+        }
+        case 'ICE_CANDIDATE': {
+          this.sendToClient(data.peerId, { ...data, peerId: client.userId })
+          break
+        }
+        default:
+          break
+      }
+    })
   }
 
   closeDuplicateClientConnection(id, newClient) {
@@ -47,6 +68,15 @@ export default class WebSocketServer {
         client.send(JSON.stringify({ type: UPDATE_AVAILABLE_ROOMS, availableRooms }))
       ))
       .catch(error => logger.error(error.message))
+  }
+
+  sendToClient(clientId, data) {
+    this.webSocketServer.clients.forEach((client) => {
+      // console.log(client.userId, clientId, client.userId === clientId)
+      if (client.userId === parseInt(clientId, 10) && client.readyState === client.OPEN) {
+        client.send(JSON.stringify(data))
+      }
+    })
   }
 
   broadcast(data) {

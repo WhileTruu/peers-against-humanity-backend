@@ -31,12 +31,25 @@ function transformRoomsFromDatabase(rooms) {
 }
 
 export function joinRoom(roomId, userId) {
-  return database.raw(`
-    INSERT INTO room_members (room_id, user_id, active)
-    VALUES (?, ?, ?)
-    ON CONFLICT (room_id, user_id) DO UPDATE SET active = TRUE
-    RETURNING *
-  `, [roomId, userId, true])
+  return new Promise((resolve, reject) => {
+    database('rooms').where({ finished: false, id: roomId })
+      .select('*')
+      .first()
+      .then((room) => {
+        if (!room) reject('no room')
+        else {
+          database.raw(`
+            INSERT INTO room_members (room_id, user_id, active)
+            VALUES (?, ?, ?)
+            ON CONFLICT (room_id, user_id) DO UPDATE SET active = TRUE
+            RETURNING *
+          `, [roomId, userId, true])
+            .then(() => resolve())
+            .catch(error => reject(error))
+        }
+      })
+      .catch(error => reject(error))
+  })
 }
 
 function removeUserFromRoomMemebers(roomId, userId) {
