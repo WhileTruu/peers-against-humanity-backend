@@ -5,7 +5,8 @@ exports.up = knex => (
       room_id integer NOT NULL,
       user_id integer NOT NULL,
       active boolean NOT NULL,
-      created_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP
+      created_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
+      unique (room_id, user_id)
     );
 
     ALTER TABLE room_members ADD CONSTRAINT FK_room_members_room_id

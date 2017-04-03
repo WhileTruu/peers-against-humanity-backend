@@ -47,8 +47,8 @@
   "scripts": {
     "test:unit": "node scripts/test.js ./src/**/*.unit.spec.{js,jsx} --runInBand",
     "test:integration": "node scripts/test.js ./src/**/*.integration.spec.js --runInBand",
-    "start": "NODE_ENV='production' node build",
-    "build": "NODE_ENV='production' babel src/ -d build --source-maps",
+    "start": "CONNECTION_STRING='postgres://user:password@localhost:5432/sah' NODE_ENV='production' node build",
+    "build": "CONNECTION_STRING='postgres://user:password@localhost:5432/sah' NODE_ENV='production' babel src/ -d build --source-maps",
     "circleci:test": "SECRET='yolohorsebatterystable' CONNECTION_STRING='postgres://ubuntu:@localhost:5432/circle_test' node scripts/test.js --runInBand --forceExit",
     "database:rollback": "scripts/migrate.rollback.sh",
     "database:latest": "scripts/migrate.latest.sh",

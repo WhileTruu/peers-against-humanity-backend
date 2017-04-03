@@ -17,4 +17,4 @@ const server = http.createServer(app)
 const webSocketServer = new WebSocketServer({ server, path: '/api/v1/rooms' }) // eslint-disable-line
 server.listen(PORT, () => logger.info(`Server running at ${PORT}`))
 
-export default server
+export { server, webSocketServer }

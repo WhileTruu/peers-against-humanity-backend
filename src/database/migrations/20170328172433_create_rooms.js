@@ -21,7 +21,7 @@ exports.up = knex => (
       ON UPDATE Cascade
     ;
 
-    ALTER SEQUENCE rooms_id_seq START WITH 10000;
+    ALTER SEQUENCE rooms_id_seq RESTART WITH 10000;
   `)
 )
 
