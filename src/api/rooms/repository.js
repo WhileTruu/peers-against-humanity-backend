@@ -135,14 +135,14 @@ export function createRoom(userId) {
               const room = roomsResult[0]
               joinRoom(room.id, userId)
                 .then(() => resolve(room.id))
-                .catch(error => resolve(error))
+                .catch(error => reject({ message: `createRoom:joinRoom: ${error.message}` }))
             })
-            .catch(error => reject(error))
+            .catch(error => reject({ message: `createRoom:insert: ${error.message}` }))
         } else {
           reject({ message: `User: ${userId} is already in a room.` })
         }
       })
-      .catch(error => reject(error))
+      .catch(error => reject({ message: `createRoom:findRoomByUserId: ${error.message}` }))
   })
 }
 
@@ -164,7 +164,7 @@ export function getRoomById(id) {
       .innerJoin('users', function joinOn() { this.on('users.id', '=', 'rooms.owner_id') })
       .first()
       .then(results => resolve(transformRoomFromDatabase(results)))
-      .catch(error => reject(error))
+      .catch(error => reject({ message: `getRoomById: ${error.message}` }))
   })
 }
 
@@ -185,6 +185,6 @@ export function getAllRooms() {
         `))
       .innerJoin('users', function joinOn() { this.on('users.id', '=', 'rooms.owner_id') })
       .then(results => resolve(transformRoomsFromDatabase(results)))
-      .catch(error => reject(error))
+      .catch(error => reject({ message: `getAllRooms: ${error.message}` }))
   })
 }

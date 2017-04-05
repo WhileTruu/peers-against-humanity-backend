@@ -14,7 +14,8 @@ router.post('/', validateUsernameAndPassword, (request, response) => {
   const { username = '', plainTextPassword = '' } = request.body
   hash(plainTextPassword, 10)
     .then(password => create(username, password)
-      .then(({ id }) => {
+      .then((result) => {
+        const id = result[0]
         response.status(201).json({ username, id, token: createTokenForUser({ id }) })
       })
       .catch((error) => {

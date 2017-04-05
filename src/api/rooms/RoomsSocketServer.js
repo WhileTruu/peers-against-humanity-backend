@@ -29,8 +29,6 @@ export default class WebSocketServer {
     this.sendAllRoomsToClient(client)
     client.on('message', (message) => {
       const data = JSON.parse(message)
-      console.log(data.type, data.peerId, client.userId)
-
       switch (data.type) {
         case 'PEER_CONNECTION_OFFER': {
           this.sendToClient(data.peerId, { ...data, peerId: client.userId })
