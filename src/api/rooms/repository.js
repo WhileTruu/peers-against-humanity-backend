@@ -87,7 +87,7 @@ export function exitRoom(userId) {
       .select('*')
       .first()
       .then((room) => {
-        if (!room) reject('no room')
+        if (!room) resolve(null)
         removeUserFromRoomMemebers(room.id, userId)
           .then(() => {
             database('room_members').select('*').where({ room_id: room.id, active: true })

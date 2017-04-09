@@ -20,12 +20,12 @@ export function isPasswordValid(password) {
 }
 
 export function validateUsernameAndPassword(request, response, next) {
-  const { username = '', plainTextPassword = '' } = request.body
-  if (!username.trim() || !plainTextPassword) {
+  const { username = '', password = '' } = request.body
+  if (!username.trim() || !password) {
     response.status(400).send()
   } else if (!isUsernameValid(username)) {
     response.status(400).send()
-  } else if (!isPasswordValid(plainTextPassword)) {
+  } else if (!isPasswordValid(password)) {
     response.status(400).send()
   } else {
     next()

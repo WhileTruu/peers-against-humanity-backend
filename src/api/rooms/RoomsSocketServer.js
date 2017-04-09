@@ -1,13 +1,13 @@
 import WebSocket from 'ws'
 
-import { getAllRooms, getRoomById } from './repository'
+import { getAllRooms, getRoomById, exitRoom } from './repository'
 import { Client, Room } from './GameRoom' // eslint-disable-line
 
 import logger from '../../logger'
 import { verifyToken } from '../authorizationService'
 
 const UPDATE_ROOM = 'UPDATE_ROOM'
-const UPDATE_AVAILABLE_ROOMS = 'UPDATE_AVAILABLE_ROOMS'
+const UPDATE_ROOMS = 'UPDATE_ROOMS'
 
 // export function getRandomName() {
 //   return Math.random().toString(36).substring(2, 6).toUpperCase()
@@ -27,6 +27,13 @@ export default class WebSocketServer {
     client.userId = clientVerification.userId // eslint-disable-line no-param-reassign
     this.closeDuplicateClientConnection(clientVerification.userId, client)
     this.sendAllRoomsToClient(client)
+    client.on('close', () => {
+      exitRoom(client.userId)
+        .then((result) => {
+          if (result) this.broadcastRoomUpdate(result[0].id)
+        })
+        .catch(error => logger.error(error))
+    })
     client.on('message', (message) => {
       const data = JSON.parse(message)
       switch (data.type) {
@@ -63,7 +70,7 @@ export default class WebSocketServer {
   sendAllRoomsToClient(client) { // eslint-disable-line class-methods-use-this
     getAllRooms()
       .then(availableRooms => (
-        client.send(JSON.stringify({ type: UPDATE_AVAILABLE_ROOMS, availableRooms }))
+        client.send(JSON.stringify({ type: UPDATE_ROOMS, availableRooms }))
       ))
       .catch(error => logger.error(error.message))
   }

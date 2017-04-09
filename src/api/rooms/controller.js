@@ -7,42 +7,52 @@ import { webSocketServer } from '../../'
 
 const router = new Router()
 
-router.put('/:id/join', verifyAuthorization, (request, response) => {
+router.put('/:roomId/members/:memberId', verifyAuthorization, (request, response) => {
   const userId = response.locals.userId
-  const roomId = request.params.id
-  joinRoom(roomId, userId)
-    .then(() => {
-      getRoomById(roomId)
-        .then((room) => {
-          response.status(200).json(room)
-          webSocketServer.broadcast({ type: 'UPDATE_ROOM', room })
-        })
-        .catch((error) => {
-          logger.error(error.message)
-          response.status(500).send()
-        })
-    })
-    .catch((error) => {
-      logger.error(error.message)
-      response.status(500).send()
-    })
+  const { roomId, memberId } = request.params
+  console.log(userId, parseInt(memberId, 10), userId === parseInt(memberId, 10), userId !== parseInt(memberId, 10))
+  if (userId !== parseInt(memberId, 10)) {
+    response.status(403).send()
+  } else {
+    joinRoom(roomId, userId)
+      .then(() => {
+        getRoomById(roomId)
+          .then((room) => {
+            response.status(200).json(room)
+            webSocketServer.broadcast({ type: 'UPDATE_ROOM', room })
+          })
+          .catch((error) => {
+            logger.error(error.message)
+            response.status(500).send()
+          })
+      })
+      .catch((error) => {
+        logger.error(error.message)
+        response.status(500).send()
+      })
+  }
 })
 
-router.put('/:id/exit', verifyAuthorization, (request, response) => {
+router.delete('/:roomId/members/:memberId', verifyAuthorization, (request, response) => {
   const userId = response.locals.userId
-  const roomId = request.params.id
-  exitRoom(userId)
-    .then((room) => {
-      response.status(200).json(room)
-      webSocketServer.broadcastRoomUpdate(roomId)
-    })
-    .catch((error) => {
-      logger.error(error.message)
-      response.status(500).send()
-    })
+  const { roomId, memberId } = request.params
+  console.log(userId, parseInt(memberId, 10), userId === parseInt(memberId, 10), userId !== parseInt(memberId, 10))
+  if (userId !== parseInt(memberId, 10)) {
+    response.status(403).send()
+  } else {
+    exitRoom(userId)
+      .then((room) => {
+        response.status(200).json(room)
+        webSocketServer.broadcastRoomUpdate(roomId)
+      })
+      .catch((error) => {
+        logger.error(error.message)
+        response.status(500).send()
+      })
+  }
 })
 
-router.post('/new', verifyAuthorization, (request, response) => {
+router.post('/', verifyAuthorization, (request, response) => {
   const userId = response.locals.userId
   createRoom(userId)
     .then((id) => {
