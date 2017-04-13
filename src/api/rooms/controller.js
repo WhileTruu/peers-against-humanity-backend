@@ -10,7 +10,6 @@ const router = new Router()
 router.put('/:roomId/members/:memberId', verifyAuthorization, (request, response) => {
   const userId = response.locals.userId
   const { roomId, memberId } = request.params
-  console.log(userId, parseInt(memberId, 10), userId === parseInt(memberId, 10), userId !== parseInt(memberId, 10))
   if (userId !== parseInt(memberId, 10)) {
     response.status(403).send()
   } else {
@@ -36,13 +35,12 @@ router.put('/:roomId/members/:memberId', verifyAuthorization, (request, response
 router.delete('/:roomId/members/:memberId', verifyAuthorization, (request, response) => {
   const userId = response.locals.userId
   const { roomId, memberId } = request.params
-  console.log(userId, parseInt(memberId, 10), userId === parseInt(memberId, 10), userId !== parseInt(memberId, 10))
   if (userId !== parseInt(memberId, 10)) {
     response.status(403).send()
   } else {
     exitRoom(userId)
-      .then((room) => {
-        response.status(200).json(room)
+      .then(() => {
+        response.status(200).send()
         webSocketServer.broadcastRoomUpdate(roomId)
       })
       .catch((error) => {

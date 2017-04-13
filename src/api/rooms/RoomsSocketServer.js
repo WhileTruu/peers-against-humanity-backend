@@ -6,9 +6,6 @@ import { Client, Room } from './GameRoom' // eslint-disable-line
 import logger from '../../logger'
 import { verifyToken } from '../authorizationService'
 
-const UPDATE_ROOM = 'UPDATE_ROOM'
-const UPDATE_ROOMS = 'UPDATE_ROOMS'
-
 // export function getRandomName() {
 //   return Math.random().toString(36).substring(2, 6).toUpperCase()
 // }
@@ -63,21 +60,20 @@ export default class WebSocketServer {
 
   broadcastRoomUpdate(id) {
     getRoomById(id)
-      .then(room => (this.broadcast({ type: UPDATE_ROOM, room })))
+      .then(room => (this.broadcast({ type: 'UPDATE_ROOM', room })))
       .catch(error => logger.error(error.message))
   }
 
   sendAllRoomsToClient(client) { // eslint-disable-line class-methods-use-this
     getAllRooms()
-      .then(availableRooms => (
-        client.send(JSON.stringify({ type: UPDATE_ROOMS, availableRooms }))
+      .then(rooms => (
+        client.send(JSON.stringify({ type: 'UPDATE_ROOMS', rooms }))
       ))
       .catch(error => logger.error(error.message))
   }
 
   sendToClient(clientId, data) {
     this.webSocketServer.clients.forEach((client) => {
-      // console.log(client.userId, clientId, client.userId === clientId)
       if (client.userId === parseInt(clientId, 10) && client.readyState === client.OPEN) {
         client.send(JSON.stringify(data))
       }
