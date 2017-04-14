@@ -1,17 +1,10 @@
 import WebSocket from 'ws'
 
-import { getAllRooms, getRoomById, exitRoom } from './repository'
+import { getAllRooms, getRoomById, exitRoom, getRoomMembers } from './repository'
 import { Client, Room } from './GameRoom' // eslint-disable-line
 
 import logger from '../../logger'
 import { verifyToken } from '../authorizationService'
-
-const UPDATE_ROOM = 'UPDATE_ROOM'
-const UPDATE_ROOMS = 'UPDATE_ROOMS'
-
-// export function getRandomName() {
-//   return Math.random().toString(36).substring(2, 6).toUpperCase()
-// }
 
 export default class WebSocketServer {
   constructor({ server, path }) {
@@ -63,21 +56,38 @@ export default class WebSocketServer {
 
   broadcastRoomUpdate(id) {
     getRoomById(id)
-      .then(room => (this.broadcast({ type: UPDATE_ROOM, room })))
+      .then(room => (this.broadcast({ type: 'UPDATE_LIST_ROOM', room })))
       .catch(error => logger.error(error.message))
   }
 
   sendAllRoomsToClient(client) { // eslint-disable-line class-methods-use-this
     getAllRooms()
-      .then(availableRooms => (
-        client.send(JSON.stringify({ type: UPDATE_ROOMS, availableRooms }))
+      .then(rooms => (
+        client.send(JSON.stringify({ type: 'UPDATE_LIST_ROOMS', rooms }))
       ))
       .catch(error => logger.error(error.message))
   }
 
+  broadcastMembers(roomId) { // eslint-disable-line class-methods-use-this
+    getRoomMembers(roomId)
+      .then((members) => {
+        this.broadcastToClients(Object.keys(members).map(key => parseInt(key, 10)), {
+          type: 'UPDATE_ROOM_MEMBERS',
+          members,
+        })
+      })
+  }
+
+  broadcastToClients(listOfClientIds, data) {
+    this.webSocketServer.clients.forEach((client) => {
+      if (listOfClientIds.includes(client.userId) && client.readyState === client.OPEN) {
+        client.send(JSON.stringify(data))
+      }
+    })
+  }
+
   sendToClient(clientId, data) {
     this.webSocketServer.clients.forEach((client) => {
-      // console.log(client.userId, clientId, client.userId === clientId)
       if (client.userId === parseInt(clientId, 10) && client.readyState === client.OPEN) {
         client.send(JSON.stringify(data))
       }

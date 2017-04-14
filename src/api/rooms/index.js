@@ -3,4 +3,4 @@ import controllerModule from './controller'
 
 export const repository = repositoryModule
 export const controller = controllerModule
-export { default } from './RoomsSocketServer'
+export { default } from './socketServer'
