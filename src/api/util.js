@@ -19,6 +19,11 @@ export function isPasswordValid(password) {
   return true
 }
 
+export function isNicknameValid(nickname) {
+  if (nickname.length < MIN_USERNAME_LENGTH || nickname.length > MAX_USERNAME_LENGTH) return false
+  return true
+}
+
 export function validateUsernameAndPassword(request, response, next) {
   const { username = '', password = '' } = request.body
   if (!username.trim() || !password) {
@@ -26,6 +31,17 @@ export function validateUsernameAndPassword(request, response, next) {
   } else if (!isUsernameValid(username)) {
     response.status(400).send()
   } else if (!isPasswordValid(password)) {
+    response.status(400).send()
+  } else {
+    next()
+  }
+}
+
+export function validateNickname(request, response, next) {
+  const { nickname = '' } = request.body
+  if (!nickname.trim()) {
+    response.status(400).send()
+  } else if (!isNicknameValid(nickname)) {
     response.status(400).send()
   } else {
     next()

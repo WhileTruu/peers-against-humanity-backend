@@ -6,6 +6,7 @@ function transformMembersFromDatabase(members) {
       id: member.id,
       active: member.active,
       username: member.username,
+      nickname: member.nickname,
     }))
     .reduce((pMember, nMember) => ({ ...pMember, [nMember.id]: nMember }), null)
 }
