@@ -1,7 +1,6 @@
 import WebSocket from 'ws'
 
 import { getAllRooms, getRoomById, exitRoom, getRoomMembers } from './repository'
-import { Client, Room } from './GameRoom' // eslint-disable-line
 
 import logger from '../../logger'
 import { verifyToken } from '../authorizationService'
