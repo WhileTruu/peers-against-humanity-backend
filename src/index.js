@@ -14,6 +14,8 @@ const app = express()
 app.use(json())
 app.use(loggingMiddleware())
 app.use('/api/v1', controller)
+app.set('trust proxy', true)
+app.set('trust proxy', 'loopback')
 
 function getSslConfig() {
   return new Promise((resolve, reject) => {
