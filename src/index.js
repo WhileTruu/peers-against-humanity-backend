@@ -20,29 +20,31 @@ app.set('trust proxy', 'loopback')
 function getSslConfig() {
   return new Promise((resolve, reject) => {
     fs.readFile('/etc/letsencrypt/live/yololo.gq/privkey.pem', (err1, data1) => {
-      if (err1) reject(err1)
+      if (err1) reject(err1.toString())
       fs.readFile('/etc/letsencrypt/live/yololo.gq/fullchain.pem', (err2, data2) => {
-        if (err2) reject(err2)
+        if (err2) reject(err2.toString())
         fs.readFile('/etc/letsencrypt/live/yololo.gq/chain.pem', (err3, data3) => {
-          if (err3) reject(err3)
+          if (err3) reject(err3.toString())
           resolve({ key: data1, cert: data2, ca: data3 })
         })
       })
     })
   })
 }
-let server = null
+let server = null // eslint-disable-line
 let socketServer = null // eslint-disable-line
 
 getSslConfig()
   .then((ssl) => {
     server = https.createServer(ssl, app)
     socketServer = new SocketServer({ server, path: '/api/v1/rooms' }) // eslint-disable-line
-    server.listen(PORT, () => logger.info(`Server running at ${PORT}`))
+    server.listen(PORT, () => logger.info(`Secure server running at ${PORT}`))
   })
   .catch((error) => {
-    console.log(error)
+    logger.error(error)
     server = http.createServer(app)
     socketServer = new SocketServer({ server, path: '/api/v1/rooms' }) // eslint-disable-line
     server.listen(PORT, () => logger.info(`Server running at ${PORT}`))
   })
+
+export { server, socketServer }
