@@ -1,6 +1,8 @@
 import database from '../../database'
+import { RoomsException } from '../errors'
 
 function transformMembersFromDatabase(members) {
+  if (!members) throw new RoomsException('No members to transform from DB.')
   return members
     .map(member => ({
       id: member.id,
@@ -12,6 +14,7 @@ function transformMembersFromDatabase(members) {
 }
 
 function transformRoomFromDatabase(room) {
+  if (!room) return null
   return {
     id: room.id,
     creatorId: room.creator_id,
@@ -30,14 +33,11 @@ function transformRoomsListFromDatabase(rooms) {
 }
 
 export function getRoomMembers(roomId) {
-  return new Promise((resolve, reject) => {
-    database('room_members')
+  return database('room_members')
       .select('*')
       .where({ room_id: roomId })
       .innerJoin('users', function joinOn() { this.on('users.id', '=', 'room_members.user_id') })
-      .then(members => resolve(transformMembersFromDatabase(members)))
-      .catch(error => reject(error))
-  })
+      .then(members => transformMembersFromDatabase(members))
 }
 
 function removeUserFromRoomMemebers(roomId, userId) {
@@ -69,7 +69,7 @@ export function exitRoom(userId) {
       .select('*')
       .first()
       .then((room) => {
-        if (!room) resolve(null)
+        if (!room) throw new RoomsException('Cannot exit a room that does not exist.')
         removeUserFromRoomMemebers(room.id, userId)
           .then(() => {
             database('room_members').select('*').where({ room_id: room.id, active: true })
@@ -82,40 +82,33 @@ export function exitRoom(userId) {
               })
           })
       })
-      .catch(err => reject(err))
+      .catch(reject)
   })
 }
 
 export function getRoomById(id) {
-  return new Promise((resolve, reject) => {
-    database('rooms').where({ 'rooms.id': id })
+  return database('rooms').where({ 'rooms.id': id })
       .select('rooms.*', 'users.username')
       .innerJoin('users', function joinOn() { this.on('users.id', '=', 'rooms.owner_id') })
       .first()
-      .then(results => resolve(transformRoomFromDatabase(results)))
-      .catch(error => reject({ message: `getRoomById: ${error.message}` }))
-  })
+      .then(transformRoomFromDatabase)
 }
 
 export function joinRoom(roomId, userId) {
-  return new Promise((resolve, reject) => {
-    getRoomById(roomId)
-      .then((room) => {
-        if (!room) reject('Such a room does not exist')
-        if (room.finished) reject(`Room ${roomId} is not active`)
-        else {
-          database.raw(`
-            INSERT INTO room_members (room_id, user_id, active)
-            VALUES (?, ?, ?)
-            ON CONFLICT (room_id, user_id) DO UPDATE SET active = TRUE
-            RETURNING *
-          `, [roomId, userId, true])
-            .then(() => resolve(room))
-            .catch(error => reject(error))
-        }
-      })
-      .catch(error => reject(error))
-  })
+  return getRoomById(roomId)
+    .then((room) => {
+      if (!room) throw new RoomsException('Such a room does not exist')
+      if (room.finished) throw new RoomsException(`Room ${roomId} is not active`)
+      else {
+        return database.raw(`
+          INSERT INTO room_members (room_id, user_id, active)
+          VALUES (?, ?, ?)
+          ON CONFLICT (room_id, user_id) DO UPDATE SET active = TRUE
+          RETURNING *
+        `, [roomId, userId, true])
+          .then(() => getRoomById(roomId))
+      }
+    })
 }
 
 function findRoomByUserId(userId, finished = false) {
@@ -127,23 +120,16 @@ function findRoomByUserId(userId, finished = false) {
 }
 
 export function createRoom(userId) {
-  return new Promise((resolve, reject) => {
-    findRoomByUserId(userId)
-      .then((foundRoom) => {
-        if (!foundRoom) {
-          database('rooms')
-            .returning('*')
-            .insert({ creator_id: userId, owner_id: userId, started: false, finished: false })
-            .then((rooms) => {
-              resolve(joinRoom(rooms[0].id, userId))
-            })
-            .catch(error => reject({ message: `createRoom:insert: ${error.message}` }))
-        } else {
-          reject({ message: `User: ${userId} is already in a room.` })
-        }
-      })
-      .catch(error => reject({ message: `createRoom:findRoomByUserId: ${error.message}` }))
-  })
+  return findRoomByUserId(userId)
+    .then((foundRoom) => {
+      if (!foundRoom) {
+        return database('rooms')
+          .returning('*')
+          .insert({ creator_id: userId, owner_id: userId, started: false, finished: false })
+          .then(([room]) => joinRoom(room.id, userId))
+      }
+      throw new RoomsException('User is already in a room.')
+    })
 }
 
 export function getAllRooms() {
@@ -152,6 +138,6 @@ export function getAllRooms() {
       .select('rooms.*', 'users.username')
       .innerJoin('users', function joinOn() { this.on('users.id', '=', 'rooms.owner_id') })
       .then(results => resolve(transformRoomsListFromDatabase(results)))
-      .catch(error => reject({ message: `getAllRooms: ${error.message}` }))
+      .catch(reject)
   })
 }

@@ -10,9 +10,9 @@ const router = new Router()
 function respond(response) {
   return ({
     status: code => ({
-      error: (message) => {
-        logger.error(message)
-        response.status(code).send(message)
+      error: (error) => {
+        logger.error(error.toString())
+        response.status(code).send(error.toString())
       },
     }),
   })

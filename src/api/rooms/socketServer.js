@@ -21,10 +21,13 @@ export default class WebSocketServer {
     this.sendAllRoomsToClient(client)
     client.on('close', () => {
       exitRoom(client.userId)
-        .then((result) => {
-          if (result) this.broadcastRoomUpdate(result[0].id)
+        .then(([room]) => {
+          if (room) {
+            this.broadcastRoomUpdate(room.id)
+            this.broadcastMembers(room.id)
+          }
         })
-        .catch(error => logger.error(error))
+        .catch(error => logger.error(error.toString()))
     })
     client.on('message', (message) => {
       const data = JSON.parse(message)
@@ -75,6 +78,7 @@ export default class WebSocketServer {
           members,
         })
       })
+      .catch(error => logger.error(error.message))
   }
 
   broadcastToClients(listOfClientIds, data) {

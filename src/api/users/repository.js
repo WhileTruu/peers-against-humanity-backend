@@ -24,19 +24,19 @@ export function create(username, password) {
   return database('users')
     .returning('id')
     .insert({ username, password, registered: true })
-    .then(result => findById(result[0]))
+    .then(([id]) => findById(id))
 }
 
 export function createTemporary(nickname) {
   return database('users')
     .returning('id')
     .insert({ nickname, registered: false })
-    .then(result => findById(result[0]))
+    .then(([id]) => findById(id))
 }
 
 export function makeTemporaryUserPermanent(id, username, password) {
   return database('users').where({ id })
     .returning('id')
     .update({ username, password, registered: true })
-    .then(result => findById(result[0]))
+    .then(() => findById(id))
 }
