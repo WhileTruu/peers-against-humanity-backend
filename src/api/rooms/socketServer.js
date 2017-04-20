@@ -14,12 +14,9 @@ export default class WebSocketServer {
 
   onConnection(client) {
     logger.info('New client connected to WS.')
-    const clientVerification = verifyToken(client.upgradeReq.headers['sec-websocket-protocol'])
-    if (!clientVerification.authorization) client.close()
-    client.userId = clientVerification.userId // eslint-disable-line no-param-reassign
-    this.closeDuplicateClientConnection(clientVerification.userId, client)
     this.sendAllRoomsToClient(client)
     client.on('close', () => {
+      if (!client.userId) return
       exitRoom(client.userId)
         .then(([room]) => {
           if (room) {
@@ -32,6 +29,18 @@ export default class WebSocketServer {
     client.on('message', (message) => {
       const data = JSON.parse(message)
       switch (data.type) {
+        case 'VERIFY': {
+          const clientVerification = verifyToken(data.token)
+          if (!clientVerification.authorization) {
+            client.send(JSON.stringify({ type: 'NOT_VERIFIED' }))
+            client.close()
+            break
+          }
+          client.userId = clientVerification.userId // eslint-disable-line
+          this.closeDuplicateClientConnection(clientVerification.userId, client)
+          client.send(JSON.stringify({ type: 'VERIFIED' }))
+          break
+        }
         case 'PEER_CONNECTION_OFFER': {
           this.sendToClient(data.peerId, { ...data, peerId: client.userId })
           break
