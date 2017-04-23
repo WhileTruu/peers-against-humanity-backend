@@ -18,10 +18,10 @@ export default class WebSocketServer {
     client.on('close', () => {
       if (!client.userId) return
       exitRoom(null, client.userId)
-        .then(([room]) => {
-          if (room) {
-            this.broadcastRoomUpdate(room.id)
-            this.broadcastMembers(room.id)
+        .then((id) => {
+          if (id) {
+            this.broadcastRoomUpdate(id)
+            this.broadcastMembers(id)
           }
         })
         .catch(error => logger.error(error.toString()))

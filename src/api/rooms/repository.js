@@ -72,24 +72,28 @@ export function createRoom(userId) {
 
 export function exitRoom(roomId, userId) {
   // am I even in this room? is this real life or is this fanta sea
-  const whereRoomId = roomId ? { 'rooms.id': roomId } : {}
+  // const whereRoomId = roomId ? ({ 'rooms.id': roomId }) : null
+  let where = { 'rooms.active': true, 'room_members.user_id': userId }
+  if (roomId) where = { ...where, 'rooms.id': roomId }
+  let exitRoomId = roomId
   return database('rooms').select('rooms.*', 'room_members.user_id')
     .innerJoin('room_members', 'rooms.id', 'room_members.room_id')
-    .where({ 'rooms.active': true, 'room_members.user_id': userId, ...whereRoomId })
+    .where(where)
     .first()
     .then((room) => {
-      if (!room) throw new RoomsException('You cannot exit a room you are not in')
+      exitRoomId = room.id
+      if (!room) throw new RoomsException('No room to exit from.')
       if (room.owner_id === parseInt(userId, 10)) {
         // Set all room members as inactive (I'm the baus), and the room too!
-        return database('room_members').where({ room_id: roomId }).update({ active: false })
-          .then(() => database('rooms').where({ id: roomId }).update({ active: false }))
+        return database('room_members').where({ room_id: exitRoomId }).update({ active: false })
+          .then(() => database('rooms').where({ id: exitRoomId }).update({ active: false }))
       }
       // Set this one specific room member inactive
       return database('room_members')
-        .where({ room_id: roomId, user_id: userId })
+        .where({ room_id: exitRoomId, user_id: userId })
         .update({ active: false })
     })
-    .then(() => Promise.resolve(roomId))
+    .then(() => Promise.resolve(exitRoomId))
 }
 
 export function joinRoom(roomId, userId) {

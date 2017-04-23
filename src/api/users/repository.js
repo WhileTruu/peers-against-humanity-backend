@@ -14,7 +14,7 @@ export function findByUsername(username) {
 
 export function findById(id) {
   return database('users')
-    .select(['id', 'created_at', 'username', 'nickname', 'registered'])
+    .select('id', 'created_at', 'username', 'nickname', 'registered')
     .where({ id })
     .first()
     .then(transformUserFromDatabase)
