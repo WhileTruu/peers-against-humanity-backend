@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
 
-import { getAllRooms, getRoomById, exitRoom, getRoomMembers } from './repository'
+import { getRooms, getRoomById, exitRoom, getRoomMembers } from './repository'
 
 import logger from '../../logger'
 import { verifyToken } from '../authorizationService'
@@ -17,7 +17,7 @@ export default class WebSocketServer {
     this.sendAllRoomsToClient(client)
     client.on('close', () => {
       if (!client.userId) return
-      exitRoom(client.userId)
+      exitRoom(null, client.userId)
         .then(([room]) => {
           if (room) {
             this.broadcastRoomUpdate(room.id)
@@ -28,6 +28,10 @@ export default class WebSocketServer {
     })
     client.on('message', (message) => {
       const data = JSON.parse(message)
+      logger.ws.info(data.type).from(client.userId ? client.userId : 'unknown')
+      if ((client.userId && data.type === 'VERIFY') || (!client.userId && data.type !== 'VERIFY')) {
+        client.close()
+      }
       switch (data.type) {
         case 'VERIFY': {
           const clientVerification = verifyToken(data.token)
@@ -42,15 +46,15 @@ export default class WebSocketServer {
           break
         }
         case 'PEER_CONNECTION_OFFER': {
-          this.sendToClient(data.peerId, { ...data, peerId: client.userId })
+          this.broadcastToClients([parseInt(data.peerId, 10)], { ...data, peerId: client.userId })
           break
         }
         case 'PEER_CONNECTION_ANSWER': {
-          this.sendToClient(data.peerId, { ...data, peerId: client.userId })
+          this.broadcastToClients([parseInt(data.peerId, 10)], { ...data, peerId: client.userId })
           break
         }
         case 'ICE_CANDIDATE': {
-          this.sendToClient(data.peerId, { ...data, peerId: client.userId })
+          this.broadcastToClients([parseInt(data.peerId, 10)], { ...data, peerId: client.userId })
           break
         }
         default:
@@ -72,7 +76,7 @@ export default class WebSocketServer {
   }
 
   sendAllRoomsToClient(client) { // eslint-disable-line class-methods-use-this
-    getAllRooms()
+    getRooms()
       .then(rooms => (
         client.send(JSON.stringify({ type: 'UPDATE_LIST_ROOMS', rooms }))
       ))
@@ -82,10 +86,12 @@ export default class WebSocketServer {
   broadcastMembers(roomId) { // eslint-disable-line class-methods-use-this
     getRoomMembers(roomId)
       .then((members) => {
-        this.broadcastToClients(Object.keys(members).map(key => parseInt(key, 10)), {
-          type: 'UPDATE_ROOM_MEMBERS',
-          members,
-        })
+        if (members) {
+          this.broadcastToClients(Object.keys(members).map(key => parseInt(key, 10)), {
+            type: 'UPDATE_ROOM_MEMBERS',
+            members,
+          })
+        }
       })
       .catch(error => logger.error(error.message))
   }
@@ -93,14 +99,7 @@ export default class WebSocketServer {
   broadcastToClients(listOfClientIds, data) {
     this.webSocketServer.clients.forEach((client) => {
       if (listOfClientIds.includes(client.userId) && client.readyState === client.OPEN) {
-        client.send(JSON.stringify(data))
-      }
-    })
-  }
-
-  sendToClient(clientId, data) {
-    this.webSocketServer.clients.forEach((client) => {
-      if (client.userId === parseInt(clientId, 10) && client.readyState === client.OPEN) {
+        logger.ws.info(data.type).to(client.userId)
         client.send(JSON.stringify(data))
       }
     })
