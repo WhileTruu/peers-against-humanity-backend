@@ -6,45 +6,41 @@ import { socketServer } from '../../'
 
 const router = new Router()
 
-function verifyMemberId(request, response, next) {
-  const userId = response.locals.userId
-  const { memberId } = request.params
-  if (userId !== parseInt(memberId, 10)) response.status(400).send()
-  return next()
-}
-
 function verifyRoomId(request, response, next) {
   const { roomId } = request.params
   if (!parseInt(roomId, 10)) return response.status(400).send()
   return next()
 }
 
-function getRoomMembers(request, response) {
+function getRoomById(request, response) {
   const { roomId } = request.params
-  return repository.getRoomMembers(roomId)
+  return repository.getRoomByID(roomId)
     .then(members => response.status(200).json(members))
     .catch(error => response.status(500).send(error.toString()))
 }
 
 function joinRoom(request, response) {
-  const { roomId, memberId } = request.params
-  return repository.joinRoom(roomId, memberId)
+  const userId = response.locals.userId
+  const { roomId } = request.params
+  return repository.getRoomById(roomId)
     .then((room) => {
-      // repository.getRoomById(room.id).then(console.log).catch(console.log)
-      socketServer.broadcastMembers(room.id)
+      if (!room.active) return response.status(400).send()
+      socketServer.joinRoom(room.ownerId, userId)
       return response.status(200).json(room)
     })
     .catch(error => response.status(500).send(error.toString()))
 }
 
 function exitRoom(request, response) {
-  const { roomId, memberId } = request.params
-  repository.exitRoom(roomId, memberId)
-    .then((exitedRoomId) => {
-      socketServer.broadcastRoomUpdate(exitedRoomId)
-      socketServer.broadcastMembers(exitedRoomId)
-      // repository.getRoomById(exitedRoomId).then(console.log).catch(console.log)
-      return response.status(200).send()
+  const userId = response.locals.userId
+  const { roomId } = request.params
+  repository.exitRoom(roomId, userId)
+    .then((room) => {
+      if (room) {
+        socketServer.broadcastRoomUpdate(room)
+        return response.status(200).send()
+      }
+      return response.status(400).send()
     })
     .catch(error => response.status(500).send(error.toString()))
 }
@@ -53,8 +49,7 @@ function createRoom(request, response) {
   const userId = response.locals.userId
   repository.createRoom(userId)
     .then((room) => {
-      socketServer.broadcastRoomUpdate(room.id)
-      // repository.getRoomById(room.id).then(console.log).catch(console.log)
+      socketServer.broadcastRoomUpdate(room)
       return response.status(200).json(room)
     })
     .catch(error => response.status(500).send(error.toString()))
@@ -62,14 +57,13 @@ function createRoom(request, response) {
 
 function getRooms(request, response) {
   repository.getRooms()
-    .then(room => response.status(200).json(room))
+    .then(rooms => response.status(200).json(rooms))
     .catch(error => response.status(500).send(error.toString()))
 }
 
-router.get('/:roomId/members', verifyAuth, verifyRoomId, getRoomMembers)
-router.put('/:roomId/members/:memberId', verifyAuth, verifyRoomId, verifyMemberId, joinRoom)
-router.delete('/:roomId/members/:memberId', verifyAuth, verifyRoomId, verifyMemberId, exitRoom)
-
+router.get('/:roomId', verifyAuth, verifyRoomId, getRoomById)
+router.put('/:roomId', verifyAuth, verifyRoomId, joinRoom)
+router.delete('/:roomId', verifyAuth, verifyRoomId, exitRoom)
 router.post('/', verifyAuth, createRoom)
 router.get('/', getRooms)
 

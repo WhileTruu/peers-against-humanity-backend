@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 
-import { getRooms, getRoomById, exitRoom, getRoomMembers } from './repository'
+import { getRooms, exitRoom } from './repository'
+import { repository as usersRepository } from '../users'
 
 import logger from '../../logger'
 import { verifyToken } from '../authorizationService'
@@ -17,13 +18,9 @@ export default class WebSocketServer {
     this.sendAllRoomsToClient(client)
     client.on('close', () => {
       if (!client.userId) return
+      // TODO: Don't throw an error if not room owner.
       exitRoom(null, client.userId)
-        .then((id) => {
-          if (id) {
-            this.broadcastRoomUpdate(id)
-            this.broadcastMembers(id)
-          }
-        })
+        .then((room) => { if (room) this.broadcastRoomUpdate(room) })
         .catch(error => logger.error(error.toString()))
     })
     client.on('message', (message) => {
@@ -46,15 +43,15 @@ export default class WebSocketServer {
           break
         }
         case 'PEER_CONNECTION_OFFER': {
-          this.broadcastToClients([parseInt(data.peerId, 10)], { ...data, peerId: client.userId })
+          this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
         }
         case 'PEER_CONNECTION_ANSWER': {
-          this.broadcastToClients([parseInt(data.peerId, 10)], { ...data, peerId: client.userId })
+          this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
         }
         case 'ICE_CANDIDATE': {
-          this.broadcastToClients([parseInt(data.peerId, 10)], { ...data, peerId: client.userId })
+          this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
         }
         default:
@@ -63,16 +60,20 @@ export default class WebSocketServer {
     })
   }
 
+  broadcastRoomUpdate(room) {
+    this.broadcast({ type: 'UPDATE_LIST_ROOM', room })
+  }
+
+  joinRoom(roomOwnerId, userId) {
+    usersRepository.findById(userId)
+      .then(user => this.broadcastToClients([parseInt(roomOwnerId, 10)], { type: 'ADD_MEMBER', user }))
+      .catch(error => logger.error(error.toString()))
+  }
+
   closeDuplicateClientConnection(id, newClient) {
     this.webSocketServer.clients.forEach((client) => {
       if (client.userId === id && client !== newClient) newClient.close()
     })
-  }
-
-  broadcastRoomUpdate(id) {
-    getRoomById(id)
-      .then(room => (this.broadcast({ type: 'UPDATE_LIST_ROOM', room })))
-      .catch(error => logger.error(error.message))
   }
 
   sendAllRoomsToClient(client) { // eslint-disable-line class-methods-use-this
@@ -80,19 +81,6 @@ export default class WebSocketServer {
       .then(rooms => (
         client.send(JSON.stringify({ type: 'UPDATE_LIST_ROOMS', rooms }))
       ))
-      .catch(error => logger.error(error.message))
-  }
-
-  broadcastMembers(roomId) { // eslint-disable-line class-methods-use-this
-    getRoomMembers(roomId)
-      .then((members) => {
-        if (members) {
-          this.broadcastToClients(Object.keys(members).map(key => parseInt(key, 10)), {
-            type: 'UPDATE_ROOM_MEMBERS',
-            members,
-          })
-        }
-      })
       .catch(error => logger.error(error.message))
   }
 
