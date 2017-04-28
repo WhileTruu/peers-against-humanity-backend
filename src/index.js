@@ -7,6 +7,7 @@ import logger, { loggingMiddleware } from './logger'
 import controller from './api'
 import { PORT, getHttpsOptions } from './config'
 import SocketServer from './api/rooms'
+import database from './database'
 
 const app = express()
 
@@ -18,6 +19,10 @@ app.set('trust proxy', 'loopback')
 
 let server = null // eslint-disable-line
 let socketServer = null // eslint-disable-line
+
+database('rooms').update({ active: false }).returning('*')
+  .then(() => logger.info('All active rooms marked inactive.'))
+  .catch(error => logger.info(error.toString()))
 
 if (process.env.NODE_ENV === 'development') {
   server = http.createServer(app)
