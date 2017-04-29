@@ -20,12 +20,14 @@ const winston = new Logger({
   ],
 })
 
-const wsString = (type, midMessage, userId) => `\
+const wsString = (type, from, to) => `\
 ${chalk.cyan((new Date().toUTCString()))} \
 ${chalk.red('WS')} \
 ${chalk.green(type)} \
-${chalk.yellow(midMessage)} \
-${chalk.blue(userId)}`
+${chalk.yellow('from')} \
+${chalk.blue(from)} \
+${chalk.yellow('to')} \
+${chalk.blue(to)}`
 
 const logger = {
   error(message) {
@@ -35,18 +37,16 @@ const logger = {
     if (process.env.NODE_ENV !== 'test') winston.info(message)
   },
   ws: {
-    info(type) {
-      return {
-        to(userId) { winston.info(wsString(type, 'send to', userId)) },
-        from(userId) { winston.info(wsString(type, 'from', userId)) },
-      }
-    },
-    error(type) {
-      return {
-        to(userId) { winston.info(wsString(type, 'send to', userId)) },
-        from(userId) { winston.info(wsString(type, 'from', userId)) },
-      }
-    },
+    info: type => ({
+      from: from => ({
+        to: to => winston.info(wsString(type, from, to)),
+      }),
+    }),
+    error: type => ({
+      from: from => ({
+        to: to => winston.error(wsString(type, from, to)),
+      }),
+    }),
   },
 }
 

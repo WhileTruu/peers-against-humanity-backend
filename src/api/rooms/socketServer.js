@@ -17,15 +17,10 @@ export default class WebSocketServer {
     logger.info('New client connected to WS.')
     this.sendAllRoomsToClient(client)
     client.on('close', () => {
-      if (!client.userId) return
-      // TODO: Don't throw an error if not room owner.
-      repository.exitRoom(null, client.userId)
-        .then((room) => { if (room) this.broadcastRoomUpdate(room) })
-        .catch(error => logger.error(error.toString()))
+      if (client.userId) this.exitRoom(null, client.userId)
     })
     client.on('message', (message) => {
       const data = JSON.parse(message)
-      logger.ws.info(data.type).from(client.userId ? client.userId : 'unknown')
       if (!client.userId && data.type !== 'AUTHENTICATE') {
         client.close()
         return
@@ -35,38 +30,46 @@ export default class WebSocketServer {
         case 'AUTHENTICATE': {
           const clientVerification = verifyToken(data.token)
           if (!clientVerification.authorization) {
+            logger.ws.info('NOT_AUTHENTICATED').from('server').to('anon')
             client.send(JSON.stringify({ type: 'NOT_AUTHENTICATED' }))
             client.close()
             break
           }
           client.userId = clientVerification.userId // eslint-disable-line
+          logger.ws.info('AUTHENTICATED').from('server').to(client.userId)
           this.closeDuplicateClientConnection(clientVerification.userId, client)
           client.send(JSON.stringify({ type: 'AUTHENTICATED' }))
           break
         }
 
         case 'PEER_CONNECTION_OFFER':
+          logger.ws.info('PEER_CONNECTION_OFFER').from(client.userId).to(data.to)
           this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
 
         case 'PEER_CONNECTION_ANSWER':
+          logger.ws.info('PEER_CONNECTION_ANSWER').from(client.userId).to(data.to)
           this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
 
         case 'ICE_CANDIDATE':
+          logger.ws.info('ICE_CANDIDATE').from(client.userId).to(data.to)
           this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
 
         case 'CREATE_ROOM':
+          logger.ws.info('CREATE_ROOM').from(client.userId).to('server')
           this.createRoom(client)
           break
 
         case 'JOIN_ROOM':
+          logger.ws.info(`TRY_JOIN_ROOM ${data.id}`).from(client.userId).to('?')
           this.joinRoom(data.id, client)
           break
 
         case 'EXIT_ROOM':
-          this.exitRoom(data.id, client)
+          logger.ws.info(`EXIT_ROOM ${data.id}`).from(client.userId).to('server')
+          this.exitRoom(data.id, client.userId)
           break
 
         default:
@@ -96,7 +99,6 @@ export default class WebSocketServer {
   broadcastToClients(listOfClientIds, data) {
     this.webSocketServer.clients.forEach((client) => {
       if (listOfClientIds.includes(client.userId) && client.readyState === client.OPEN) {
-        logger.ws.info(data.type).to(client.userId)
         client.send(JSON.stringify(data))
       }
     })
@@ -110,22 +112,15 @@ export default class WebSocketServer {
     })
   }
 
-  exitRoom(roomId, client) {
-    const exitRoom = () => repository.exitRoom(roomId, client.userId)
-      .then((exitedRoom) => {
-        if (exitedRoom) {
-          this.broadcastRoomUpdate(exitedRoom)
-          if (roomId) client.send(JSON.stringify({ type: 'EXITED_ROOM' }))
-        } else if (roomId) {
-          client.send(JSON.stringify({ type: 'ROOM_NOT_EXITED' }))
+  exitRoom(roomId, userId) {
+    repository.exitRoom(roomId, userId)
+      .then((room) => {
+        if (room) {
+          logger.ws.info(`EXITED_ROOM ${room.id}`).from('server').to(userId)
+          this.broadcastRoomUpdate(room)
         }
       })
-      .catch(error => client.send(JSON.stringify({ type: 'ROOM_NOT_EXITED', error: error.toString() })))
-    if (!roomId) exitRoom()
-    return repository.getRoomById(roomId)
-      .then((room) => {
-        if (client.userId === room.ownerId) exitRoom()
-      })
+      .catch(error => logger.ws.error(error.toString()).from(userId))
   }
 
   joinRoom(roomId, client) {
@@ -134,6 +129,7 @@ export default class WebSocketServer {
         if (!room.active) {
           throw new RoomsException('Room you are trying to join is not active.')
         } else {
+          logger.ws.info(`JOIN_ROOM ${roomId}`).from(client.userId).to(room.ownerId)
           this.broadcastToClients([parseInt(room.ownerId, 10)], {
             type: 'NEW_MEMBER', from: client.userId, to: room.ownerId,
           })
@@ -147,6 +143,7 @@ export default class WebSocketServer {
   createRoom(client) { // eslint-disable-line
     repository.createRoom(client.userId)
       .then((room) => {
+        logger.ws.info(`CREATED_ROOM ${room.id}`).from('server').to(client.userId)
         client.send(JSON.stringify({ type: 'CREATED_ROOM', room }))
         this.broadcast({ type: 'UPDATE_ROOM', room })
       })

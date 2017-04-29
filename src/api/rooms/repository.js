@@ -40,14 +40,19 @@ export function createRoom(userId) {
 
 
 export function exitRoom(roomId, userId) {
-  let where = { owner_id: userId }
-  if (roomId) where = { ...where, id: roomId }
-  return database('rooms').select('rooms.*', 'owner_id').where(where).first()
-    .then((room) => {
-      if (!room) throw new RoomsException('No room to exit from.')
-      if (!room.active) return Promise.resolve([room])
+  let where = { 'rooms.owner_id': userId, 'rooms.active': true }
+  if (roomId) where = { ...where, 'rooms.id': roomId }
+  return database('rooms')
+    .innerJoin('users', 'users.id', 'rooms.owner_id')
+    .select('rooms.id', 'rooms.active', 'rooms.owner_id', 'users.username', 'users.nickname', 'rooms.created_at')
+    .where(where)
+    .first()
+    .then((untransformedRoom) => {
+      if (!untransformedRoom) throw new RoomsException('No room to exit from.')
+      const room = transformRoomFromDatabase(untransformedRoom)
+      if (!room.active) return Promise.resolve(room)
       // Set room inactive
       return database('rooms').where({ id: room.id }).update({ active: false }).returning('*')
+        .then(() => Promise.resolve({ ...room, active: false }))
     })
-    .then(([room]) => getRoomById(room.id))
 }
