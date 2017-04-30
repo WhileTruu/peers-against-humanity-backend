@@ -35,10 +35,16 @@ export default class WebSocketServer {
             client.close()
             break
           }
-          client.userId = clientVerification.userId // eslint-disable-line
-          logger.ws.info('AUTHENTICATED').from('server').to(client.userId)
-          this.closeDuplicateClientConnection(clientVerification.userId, client)
-          client.send(JSON.stringify({ type: 'AUTHENTICATED' }))
+
+          if (this.isDuplicateConnection(clientVerification.userId)) {
+            logger.ws.info('NOT_AUTHENTICATED').from('server').to(clientVerification.userId)
+            client.send(JSON.stringify({ type: 'NOT_AUTHENTICATED' }))
+            client.close()
+          } else {
+            client.userId = clientVerification.userId // eslint-disable-line
+            logger.ws.info('AUTHENTICATED').from('server').to(clientVerification.userId)
+            client.send(JSON.stringify({ type: 'AUTHENTICATED' }))
+          }
           break
         }
 
@@ -82,10 +88,11 @@ export default class WebSocketServer {
     this.broadcast({ type: 'UPDATE_ROOM', room })
   }
 
-  closeDuplicateClientConnection(id, newClient) {
-    this.webSocketServer.clients.forEach((client) => {
-      if (client.userId === id && client !== newClient) newClient.close()
-    })
+  isDuplicateConnection(clientId) {
+    for (let client of this.webSocketServer.clients) { // eslint-disable-line
+      if (client.userId === clientId) return true
+    }
+    return false
   }
 
   sendAllRoomsToClient(client) { // eslint-disable-line class-methods-use-this
