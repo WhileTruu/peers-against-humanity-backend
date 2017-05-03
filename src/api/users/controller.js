@@ -48,10 +48,10 @@ router.post('/authentication', validateUsernameAndPassword, (request, response) 
   const { username = '', password = '' } = request.body
   findByUsername(username)
     .then((user) => {
-      if (!user) return response.status(403).send()
+      if (!user) return response.status(401).send()
       return compare(password, user.password)
         .then((valid) => {
-          if (!valid) return response.status(403).send()
+          if (!valid) return response.status(401).send()
           return response.status(200).json({ user, token: createToken({ id: user.id }) })
         })
         .catch((error) => {
@@ -75,14 +75,14 @@ router.post('/temporary', validateNickname, (request, response) => {
     })
 })
 
-router.put('/temporary/:id', verifyAuthorization, validateUsernameAndPassword, (request, response) => {
+router.put('/temporary/:id', verifyAuthorization, validateNickname, validateUsernameAndPassword, (request, response) => {
   const { userId } = response.locals
   if (response.locals.userId !== parseInt(request.params.id, 10)) {
     return response.status(403).send()
   }
-  const { username = '', password = '' } = request.body
+  const { nickname, username = '', password = '' } = request.body
   return hash(password, 10)
-    .then(hashedPassword => makeTemporaryUserPermanent(userId, username, hashedPassword)
+    .then(hashedPassword => makeTemporaryUserPermanent(userId, nickname, username, hashedPassword)
       .then(user => response.status(201).json({ user, token: createToken({ id: user.id }) }))
       .catch((error) => {
         logger.error(error.toString())

@@ -9,7 +9,10 @@ export function findByUsername(username) {
   return database('users')
     .where({ username })
     .first()
-    .then(user => ({ ...transformUserFromDatabase(user), password: user.password }))
+    .then((user) => {
+      if (user) return ({ ...transformUserFromDatabase(user), password: user.password })
+      return null
+    })
 }
 
 export function findById(id) {
@@ -34,9 +37,9 @@ export function createTemporary(nickname) {
     .then(([id]) => findById(id))
 }
 
-export function makeTemporaryUserPermanent(id, username, password) {
+export function makeTemporaryUserPermanent(id, nickname, username, password) {
   return database('users').where({ id })
     .returning('id')
-    .update({ username, password, registered: true })
+    .update({ nickname, username, password, registered: true })
     .then(() => findById(id))
 }
