@@ -48,18 +48,18 @@ export default class WebSocketServer {
           break
         }
 
-        case 'PEER_CONNECTION_OFFER':
-          logger.ws.info('PEER_CONNECTION_OFFER').from(client.userId).to(data.to)
+        case '@dataChannel/OFFER':
+          logger.ws.info('@dataChannel/OFFER').from(client.userId).to(data.to)
           this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
 
-        case 'PEER_CONNECTION_ANSWER':
-          logger.ws.info('PEER_CONNECTION_ANSWER').from(client.userId).to(data.to)
+        case '@dataChannel/ANSWER':
+          logger.ws.info('@dataChannel/ANSWER').from(client.userId).to(data.to)
           this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
 
-        case 'ICE_CANDIDATE':
-          logger.ws.info('ICE_CANDIDATE').from(client.userId).to(data.to)
+        case '@dataChannel/ICE_CANDIDATE':
+          logger.ws.info('@dataChannel/ICE_CANDIDATE').from(client.userId).to(data.to)
           this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
 
@@ -76,6 +76,11 @@ export default class WebSocketServer {
         case 'EXIT_ROOM':
           logger.ws.info(`EXIT_ROOM ${data.id}`).from(client.userId).to('server')
           this.exitRoom(data.id, client.userId)
+          break
+
+        case 'TAKE_OVER_ROOM':
+          logger.ws.info(`TAKE_OVER_ROOM ${data.id}`).from(client.userId).to('server')
+          this.takeOverRoom(data.id, client.userId)
           break
 
         default:
@@ -130,6 +135,17 @@ export default class WebSocketServer {
       .catch(error => logger.ws.error(error.toString()).from(userId))
   }
 
+  takeOverRoom(roomId, userId) {
+    repository.takeOverRoom(roomId, userId)
+      .then((room) => {
+        if (room) {
+          logger.ws.info(`TOOK_OVER_ROOM ${room.id}`).from('server').to(userId)
+          this.broadcastRoomUpdate(room)
+        }
+      })
+      .catch(error => logger.ws.error(error.toString()).from(userId))
+  }
+
   joinRoom(roomId, client) {
     return repository.getRoomById(roomId)
       .then((room) => {
@@ -138,7 +154,7 @@ export default class WebSocketServer {
         } else {
           logger.ws.info(`JOIN_ROOM ${roomId}`).from(client.userId).to(room.ownerId)
           this.broadcastToClients([parseInt(room.ownerId, 10)], {
-            type: 'NEW_MEMBER', from: client.userId, to: room.ownerId,
+            type: 'JOIN_ROOM', from: client.userId, to: room.ownerId,
           })
         }
       })

@@ -38,6 +38,13 @@ export function createRoom(userId) {
     .then(([room]) => getRoomById(room.id))
 }
 
+export function takeOverRoom(roomId, userId) {
+  return database('rooms').where({ id: roomId })
+    .update({ owner_id: userId, active: true })
+    .returning('*')
+    .then(() => getRoomById(roomId))
+}
+
 
 export function exitRoom(roomId, userId) {
   let where = { 'rooms.owner_id': userId, 'rooms.active': true }
