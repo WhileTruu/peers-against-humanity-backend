@@ -52,7 +52,11 @@ router.post('/authentication', validateUsernameAndPassword, (request, response) 
       return compare(password, user.password)
         .then((valid) => {
           if (!valid) return response.status(401).send()
-          return response.status(200).json({ user, token: createToken({ id: user.id }) })
+          const { password: deletedPassword, ...userWithoutPassword } = user
+          return response.status(200).json({
+            user: userWithoutPassword,
+            token: createToken({ id: user.id }),
+          })
         })
         .catch((error) => {
           logger.error(error.toString())
