@@ -21,29 +21,29 @@ export default class WebSocketServer {
     })
     client.on('message', (message) => {
       const data = JSON.parse(message)
-      if (!client.userId && data.type !== 'AUTHENTICATE') {
+      if (!client.userId && data.type !== '@socket/AUTHENTICATE') {
         client.close()
         return
       }
       switch (data.type) {
 
-        case 'AUTHENTICATE': {
+        case '@socket/AUTHENTICATE': {
           const clientVerification = verifyToken(data.token)
           if (!clientVerification.authorization) {
-            logger.ws.info('NOT_AUTHENTICATED').from('server').to('anon')
-            client.send(JSON.stringify({ type: 'NOT_AUTHENTICATED' }))
+            logger.ws.info('@socket/NOT_AUTHENTICATED').from('server').to('anon')
+            client.send(JSON.stringify({ type: '@socket/NOT_AUTHENTICATED' }))
             client.close()
             break
           }
 
           if (this.isDuplicateConnection(clientVerification.userId)) {
-            logger.ws.info('NOT_AUTHENTICATED').from('server').to(clientVerification.userId)
-            client.send(JSON.stringify({ type: 'NOT_AUTHENTICATED' }))
+            logger.ws.info('NOT_@socket/AUTHENTICATED').from('server').to(clientVerification.userId)
+            client.send(JSON.stringify({ type: '@socket/NOT_AUTHENTICATED' }))
             client.close()
           } else {
             client.userId = clientVerification.userId // eslint-disable-line
-            logger.ws.info('AUTHENTICATED').from('server').to(clientVerification.userId)
-            client.send(JSON.stringify({ type: 'AUTHENTICATED' }))
+            logger.ws.info('@socket/AUTHENTICATED').from('server').to(clientVerification.userId)
+            client.send(JSON.stringify({ type: '@socket/AUTHENTICATED' }))
           }
           break
         }
@@ -63,28 +63,28 @@ export default class WebSocketServer {
           this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
 
-        case 'CREATE_ROOM':
-          logger.ws.info('CREATE_ROOM').from(client.userId).to('server')
+        case '@rooms/CREATE_ROOM':
+          logger.ws.info('@rooms/CREATE_ROOM').from(client.userId).to('server')
           this.createRoom(client)
           break
 
-        case 'JOIN_ROOM':
-          logger.ws.info(`TRY_JOIN_ROOM ${data.id}`).from(client.userId).to('?')
+        case '@rooms/JOIN_ROOM':
+          logger.ws.info(`@rooms/TRY_JOIN_ROOM ${data.id}`).from(client.userId).to('?')
           this.joinRoom(data.id, client)
           break
 
-        case 'EXIT_ROOM':
-          logger.ws.info(`EXIT_ROOM ${data.id}`).from(client.userId).to('server')
+        case '@rooms/EXIT_ROOM':
+          logger.ws.info(`@rooms/EXIT_ROOM ${data.id}`).from(client.userId).to('server')
           this.exitRoom(data.id, client.userId)
           break
 
-        case 'TAKE_OVER_ROOM':
-          logger.ws.info(`TAKE_OVER_ROOM ${data.id}`).from(client.userId).to('server')
+        case '@socket/TAKE_OVER_ROOM':
+          logger.ws.info(`@socket/TAKE_OVER_ROOM ${data.id}`).from(client.userId).to('server')
           this.takeOverRoom(data.id, client.userId)
           break
 
-        case 'ROOM_NOT_JOINED':
-          logger.ws.info(`ROOM_NOT_JOINED ${data.id}`).from(client.userId).to('server')
+        case '@rooms/ROOM_NOT_JOINED':
+          logger.ws.info(`@rooms/ROOM_NOT_JOINED ${data.id}`).from(client.userId).to('server')
           this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
 
@@ -95,7 +95,7 @@ export default class WebSocketServer {
   }
 
   broadcastRoomUpdate(room) {
-    this.broadcast({ type: 'UPDATE_ROOM', room })
+    this.broadcast({ type: '@rooms/UPDATE_ROOM', room })
   }
 
   isDuplicateConnection(clientId) {
@@ -108,7 +108,7 @@ export default class WebSocketServer {
   sendAllRoomsToClient(client) { // eslint-disable-line class-methods-use-this
     repository.getRooms()
       .then(rooms => (
-        client.send(JSON.stringify({ type: 'UPDATE_ROOMS', rooms }))
+        client.send(JSON.stringify({ type: '@rooms/UPDATE_ROOMS', rooms }))
       ))
       .catch(error => logger.error(error.message))
   }
@@ -133,7 +133,7 @@ export default class WebSocketServer {
     repository.exitRoom(roomId, userId)
       .then((room) => {
         if (room) {
-          logger.ws.info(`EXITED_ROOM ${room.id}`).from('server').to(userId)
+          logger.ws.info(`@rooms/EXITED_ROOM ${room.id}`).from('server').to(userId)
           this.broadcastRoomUpdate(room)
         }
       })
@@ -144,7 +144,7 @@ export default class WebSocketServer {
     repository.takeOverRoom(roomId, userId)
       .then((room) => {
         if (room) {
-          logger.ws.info(`TOOK_OVER_ROOM ${room.id}`).from('server').to(userId)
+          logger.ws.info(`@socket/TOOK_OVER_ROOM ${room.id}`).from('server').to(userId)
           this.broadcastRoomUpdate(room)
         }
       })
@@ -157,24 +157,24 @@ export default class WebSocketServer {
         if (!room.active) {
           throw new RoomsException('Room you are trying to join is not active.')
         } else {
-          logger.ws.info(`JOIN_ROOM ${roomId}`).from(client.userId).to(room.ownerId)
+          logger.ws.info(`@rooms/JOIN_ROOM ${roomId}`).from(client.userId).to(room.ownerId)
           this.broadcastToClients([parseInt(room.ownerId, 10)], {
-            type: 'JOIN_ROOM', from: client.userId, to: room.ownerId,
+            type: '@rooms/JOIN_ROOM', from: client.userId, to: room.ownerId,
           })
         }
       })
       .catch(error => client.send(JSON.stringify({
-        type: 'ROOM_NOT_JOINED', error: error.toString(), from: -1337, to: client.userId,
+        type: '@rooms/ROOM_NOT_JOINED', error: error.toString(), from: -1337, to: client.userId,
       })))
   }
 
   createRoom(client) { // eslint-disable-line
     repository.createRoom(client.userId)
       .then((room) => {
-        logger.ws.info(`CREATED_ROOM ${room.id}`).from('server').to(client.userId)
-        client.send(JSON.stringify({ type: 'CREATED_ROOM', room }))
-        this.broadcast({ type: 'UPDATE_ROOM', room })
+        logger.ws.info(`@rooms/CREATED_ROOM ${room.id}`).from('server').to(client.userId)
+        client.send(JSON.stringify({ type: '@rooms/CREATED_ROOM', room }))
+        this.broadcast({ type: '@rooms/UPDATE_ROOM', room })
       })
-      .catch(error => client.send(JSON.stringify({ type: 'ROOM_NOT_CREATED', error: error.toString() })))
+      .catch(error => client.send(JSON.stringify({ type: '@rooms/ROOM_NOT_CREATED', error: error.toString() })))
   }
 }
