@@ -83,8 +83,8 @@ export default class WebSocketServer {
           this.takeOverRoom(data.id, client.userId)
           break
 
-        case '@rooms/ROOM_NOT_JOINED':
-          logger.ws.info(`@rooms/ROOM_NOT_JOINED ${data.id}`).from(client.userId).to('server')
+        case '@rooms/JOIN_DENIED':
+          logger.ws.info(`@rooms/JOIN_DENIED ${data.id}`).from(client.userId).to(data.to)
           this.broadcastToClients([parseInt(data.to, 10)], { ...data })
           break
 
