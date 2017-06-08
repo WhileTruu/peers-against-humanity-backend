@@ -28,9 +28,9 @@ router.get('/:id', verifyAuthorization, (request, response) => {
 })
 
 router.post('/', validateUsernameAndPassword, (request, response) => {
-  const { username = '', password = '' } = request.body
+  const { username = '', password = '', nickname = null } = request.body
   hash(password, 10)
-    .then(hashedPassword => create(username, hashedPassword)
+    .then(hashedPassword => create(username, nickname, hashedPassword)
       .then((user) => {
         response.status(201).json({ user, token: createToken({ id: user.id }) })
       })

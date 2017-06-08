@@ -23,10 +23,10 @@ export function findById(id) {
     .then(transformUserFromDatabase)
 }
 
-export function create(username, password) {
+export function create(username, nickname, password) {
   return database('users')
     .returning('id')
-    .insert({ username, password, registered: true })
+    .insert({ username, nickname, password, registered: true })
     .then(([id]) => findById(id))
 }
 
